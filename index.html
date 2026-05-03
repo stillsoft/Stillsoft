@@ -554,7 +554,6 @@ body{overflow:hidden;}
 <!-- SCROLLABLE WORKSPACE TRACK -->
 <div class="workspace-track-wrap" id="workspace-wrap">
   <div class="workspace-actions">
-    <button class="btn-ghost" onclick="openGhostPortal()">subscribe</button>
     <button class="btn-add-col" id="add-col-btn" onclick="handleAddCol()">
       <span class="plus">+</span> <span id="add-col-label">add a 2nd start</span>
     </button>
@@ -803,6 +802,7 @@ let liveSaveInFlight = false;
 let applyingRemoteListUpdate = false;
 let applyingRemoteWidgetUpdate = false;
 let loginMode = 'save';
+let magicLinkAuthInitialized = false;
 
 function getSupabase(){
   if(!window.supabase || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) return null;
@@ -1741,12 +1741,12 @@ function openLogin(e){
   const btn=document.querySelector('#login-modal .btn-up');
   if(loginMode==='load'){
     if(title)title.textContent='log in';
-    if(body)body.textContent='enter your email to open your saved start on this device.';
-    if(btn)btn.textContent='open my saved start';
+    if(body)body.textContent='enter your email and we will send a magic link to open your saved start.';
+    if(btn)btn.textContent='send magic link';
   }else{
     if(title)title.textContent='save your starts';
-    if(body)body.textContent='enter your email to save your widgets and first start for free.';
-    if(btn)btn.textContent='subscribe free';
+    if(body)body.textContent='enter your email and we will send a magic link to save your widgets and first start for free.';
+    if(btn)btn.textContent='send magic link';
   }
   document.getElementById('login-modal').classList.add('open');
   setTimeout(()=>document.getElementById('login-email').focus(),200);
@@ -1760,29 +1760,76 @@ async function submitLogin(){
   const email=document.getElementById('login-email').value.trim();
   const msg=document.getElementById('login-msg');
   if(!email||!email.includes('@')){msg.textContent='please enter a valid email';msg.style.color='var(--red)';return;}
-  msg.textContent=loginMode==='load'?'opening your saved start…':'saving your start…';
+  const db=getSupabase();
+  if(!db){msg.textContent='supabase is not ready';msg.style.color='var(--red)';return;}
+  msg.textContent='sending magic link…';
   msg.style.color='var(--accent)';
   try{
-    if(loginMode==='load'){
+    localStorage.setItem('thoftly_pending_auth', JSON.stringify({mode:loginMode,email:email.trim().toLowerCase()}));
+    await db.auth.signInWithOtp({
+      email,
+      options:{
+        emailRedirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    msg.textContent='check your email for the magic link';
+  }catch(e){
+    msg.textContent=e.message||'could not send magic link';
+    msg.style.color='var(--red)';
+  }
+}
+
+async function completeMagicLinkLogin(session){
+  if(!session||!session.user||!session.user.email) return;
+  const pendingRaw=localStorage.getItem('thoftly_pending_auth');
+  if(!pendingRaw) return;
+  let pending;
+  try{ pending=JSON.parse(pendingRaw); }catch(e){ pending=null; }
+  if(!pending||!pending.mode) return;
+  const email=session.user.email.trim().toLowerCase();
+  currentUserEmail=email;
+  localStorage.setItem('thoftly_email', email);
+  const topEmail=document.getElementById('topbar-email');
+  if(topEmail) topEmail.value=email;
+  const loginInput=document.getElementById('login-email');
+  if(loginInput) loginInput.value=email;
+  const msg=document.getElementById('login-msg');
+  if(msg) msg.textContent=pending.mode==='load'?'opening your saved start…':'saving your start…';
+  try{
+    if(pending.mode==='load'){
       await loadSavedStartFromSupabase(email);
-      msg.textContent='✓ opened';
+      if(msg) msg.textContent='✓ opened';
     }else{
       await saveFirstListToSupabase(email);
-      msg.textContent='✓ saved';
+      if(msg) msg.textContent='✓ saved';
     }
-    const topEmail=document.getElementById('topbar-email');
-    if(topEmail)topEmail.value=email;
-    setTimeout(async ()=>{
+    localStorage.removeItem('thoftly_pending_auth');
+    setTimeout(()=>{
       closeLogin();
       if(pendingSecondList){
         pendingSecondList=false;
-        await handleAddCol();
+        handleAddCol();
       }
-    },900);
+    },400);
   }catch(e){
-    msg.textContent=e.message||'could not save right now';
-    msg.style.color='var(--red)';
+    if(msg){
+      msg.textContent=e.message||'could not complete sign in';
+      msg.style.color='var(--red)';
+    }
   }
+}
+
+function initMagicLinkAuth(){
+  if(magicLinkAuthInitialized) return;
+  const db=getSupabase();
+  if(!db) return;
+  magicLinkAuthInitialized=true;
+  db.auth.getSession().then(({data})=>{
+    if(data&&data.session) completeMagicLinkLogin(data.session);
+  }).catch(()=>{});
+  db.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_IN'&&session) completeMagicLinkLogin(session);
+  });
 }
 
 // SAFE JSON PARSER — handles apostrophes, smart quotes, extra text
@@ -2396,6 +2443,7 @@ window.addEventListener('storage', e=>{
 
 // Load on startup
 document.addEventListener('DOMContentLoaded', loadFromLocal);
+document.addEventListener('DOMContentLoaded', initMagicLinkAuth);
 </script>
 </body>
 </html>
