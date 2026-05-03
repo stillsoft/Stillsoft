@@ -749,6 +749,18 @@ body{overflow:hidden;}
   </div>
 </div>
 
+<!-- REPLACE LIST MODAL -->
+<div class="overlay" id="replace-list-modal">
+  <div class="modal">
+    <div class="m-ey">start something new</div>
+    <div class="m-ttl" style="font-size:16px;">replace this list?</div>
+    <div class="m-body">generating a new list here will replace your current one. add a 2nd start if you want to keep both.</div>
+    <button class="btn-up" onclick="confirmReplaceList()" style="margin-bottom:8px;">replace current list</button>
+    <button class="btn-up" onclick="addSecondFromReplace()" style="background:var(--accent-pale);color:var(--accent);border:1px solid var(--accent);margin-bottom:8px;">add a 2nd start</button>
+    <button class="btn-skip" onclick="closeReplaceList()">cancel</button>
+  </div>
+</div>
+
 <!-- PAYWALL -->
 <div class="overlay" id="paywall">
   <div class="modal">
@@ -1167,6 +1179,7 @@ function toggleWantPill(input){
 }
 // checklist state
 let activeList=null;
+let pendingBeginValue='';
 
 // get the active workspace column (always first one for now)
 function getCol2(){ return document.getElementById('ws-col-1'); }
@@ -1174,6 +1187,16 @@ function getCol2(){ return document.getElementById('ws-col-1'); }
 function doBegin(){
   const val=document.getElementById('begin-in').value.trim();
   if(!val)return;
+  const existing=getCol2().querySelector('.cl-card:not(#cl-ld)');
+  if(existing&&!existing.querySelector('#submit-cq-btn')){
+    pendingBeginValue=val;
+    showReplaceList();
+    return;
+  }
+  startBegin(val);
+}
+
+function startBegin(val){
   activeList=null;
   window._currentPrompt=val;
   window._displayPrompt=val;
@@ -1181,6 +1204,18 @@ function doBegin(){
   showKnowLoading();
   genChecklist(val);
   genKnow(val);
+}
+
+function showReplaceList(){document.getElementById('replace-list-modal').classList.add('open');}
+function closeReplaceList(){document.getElementById('replace-list-modal').classList.remove('open');pendingBeginValue='';}
+function confirmReplaceList(){
+  const val=pendingBeginValue||document.getElementById('begin-in').value.trim();
+  closeReplaceList();
+  if(val)startBegin(val);
+}
+async function addSecondFromReplace(){
+  closeReplaceList();
+  await handleAddCol();
 }
 
 function showLoading(topic){
