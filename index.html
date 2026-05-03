@@ -799,6 +799,7 @@ let currentUserEmail = localStorage.getItem('thoftly_email') || '';
 let pendingSecondList = false;
 let liveSaveTimer = null;
 let liveSaveInFlight = false;
+let applyingRemoteListUpdate = false;
 
 function getSupabase(){
   if(!window.supabase || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) return null;
@@ -865,6 +866,11 @@ function collectGeneratedList(){
       }))
     }))
   };
+}
+
+function listSnapshot(value){
+  try{return JSON.stringify(value||null);}
+  catch(e){return '';}
 }
 
 function restoreGeneratedList(saved){
@@ -1399,8 +1405,10 @@ function renderChecklist(data,isSaved){
   col2.insertBefore(div,col2.firstChild);
   localStorage.setItem('thoftly_main_list_exists','1');
   localStorage.removeItem('thoftly_main_list_pending');
-  saveToLocal();
-  scheduleLiveSave();
+  if(!applyingRemoteListUpdate){
+    saveToLocal();
+    scheduleLiveSave();
+  }
 }
 
 function toggleItemByBox(ckEl){
@@ -2269,6 +2277,18 @@ document.addEventListener('click', ()=>{
 window.addEventListener('storage', e=>{
   if(e.key==='thoftly_clear_main_list_at'&&e.newValue){
     clearWsFromOtherTab();
+  }
+  if(e.key==='thoftly_data'&&e.newValue){
+    try{
+      const data=JSON.parse(e.newValue);
+      if(!data.generatedList) return;
+      if(listSnapshot(data.generatedList)===listSnapshot(collectGeneratedList())) return;
+      applyingRemoteListUpdate=true;
+      restoreGeneratedList(data.generatedList);
+      applyingRemoteListUpdate=false;
+    }catch(err){
+      applyingRemoteListUpdate=false;
+    }
   }
 });
 
