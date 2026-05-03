@@ -554,7 +554,7 @@ body{overflow:hidden;}
 <div class="workspace-track-wrap" id="workspace-wrap">
   <div class="workspace-actions">
     <button class="btn-ghost" onclick="openExistingLogin()">log in</button>
-    <button class="btn-ghost" data-members-signout onclick="logoutUser()">log out</button>
+    <button class="btn-ghost" data-members-signout onclick="logoutUser(event)">log out</button>
     <button class="btn-add-col" id="add-col-btn" onclick="handleAddCol()">
       <span class="plus">+</span> <span id="add-col-label">a 2nd start</span>
     </button>
@@ -1695,18 +1695,26 @@ function openExistingLogin(){
   openLogin();
 }
 
-function logoutUser(){
+function logoutUser(event){
   currentUserEmail='';
   pendingSecondList=false;
   clearTimeout(liveSaveTimer);
-  localStorage.removeItem('thoftly_email');
-  localStorage.removeItem('thoftly_pending_auth');
+  Array.from({length:localStorage.length},(_,i)=>localStorage.key(i))
+    .filter(key=>key&&key.startsWith('thoftly_'))
+    .forEach(key=>localStorage.removeItem(key));
   const topEmail=document.getElementById('topbar-email');
   if(topEmail) topEmail.value='';
   const loginEmail=document.getElementById('login-email');
   if(loginEmail) loginEmail.value='';
   const db=getSupabase();
-  if(db&&db.auth) db.auth.signOut().catch(()=>{});
+  const reloadClean=()=>{
+    setTimeout(()=>{
+      if(window.location.hash) window.location.href=window.location.origin+window.location.pathname;
+      else window.location.reload();
+    },600);
+  };
+  if(db&&db.auth) db.auth.signOut().catch(()=>{}).finally(reloadClean);
+  else reloadClean();
 }
 
 function openPaidGhostPortal(event){
