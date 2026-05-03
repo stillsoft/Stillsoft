@@ -811,6 +811,39 @@ function collectGeneratedList(){
   };
 }
 
+function restoreGeneratedList(saved){
+  if(!saved || !saved.sections || !saved.sections.length) return;
+  window._currentPrompt=saved.prompt||'';
+  if(saved.facts&&saved.facts.length) renderKnow(saved.facts);
+  const data={
+    title:saved.title||'saved start',
+    tagline:saved.tagline||'saved',
+    facts:saved.facts||[],
+    sections:saved.sections.map(sec=>({
+      name:sec.name||'steps',
+      items:(sec.items||[]).map(item=>typeof item==='string'?item:item.text)
+    }))
+  };
+  renderChecklist(data,true);
+  const card=getCol2().querySelector('.cl-card');
+  if(!card) return;
+  saved.sections.forEach((sec,secIndex)=>{
+    const secEl=card.querySelectorAll('.cl-sec')[secIndex];
+    if(!secEl) return;
+    const secCheck=secEl.querySelector('.sec-ck');
+    if(sec.done&&secCheck) secCheck.classList.add('done');
+    (sec.items||[]).forEach((item,itemIndex)=>{
+      if(typeof item==='string') return;
+      const row=secEl.querySelectorAll('.cl-item')[itemIndex];
+      if(!row) return;
+      const ck=row.querySelector('.i-ck');
+      const txt=row.querySelector('.i-txt');
+      if(item.done&&ck) ck.classList.add('done');
+      if(item.done&&txt) txt.classList.add('done-t');
+    });
+  });
+}
+
 async function saveFirstListToSupabase(email){
   const db=getSupabase();
   if(!db) throw new Error('Add your Supabase URL and anon key in index.html first.');
@@ -918,7 +951,13 @@ async function searchWxLocation(){
   }catch(e){err.textContent='couldn\'t search — check connection';}
 }
 function wcode(c){if(c===0)return{label:'clear',icon:'☀️'};if(c<=2)return{label:'partly cloudy',icon:'⛅'};if(c===3)return{label:'overcast',icon:'☁️'};if(c<=49)return{label:'foggy',icon:'🌫️'};if(c<=57)return{label:'drizzle',icon:'🌦️'};if(c<=67)return{label:'rain',icon:'🌧️'};if(c<=77)return{label:'snow',icon:'❄️'};if(c<=82)return{label:'showers',icon:'🌦️'};return{label:'thunderstorm',icon:'⛈️'};}
-document.addEventListener("DOMContentLoaded",()=>{loadWx();});
+document.addEventListener("DOMContentLoaded",()=>{
+  try{
+    const saved=JSON.parse(localStorage.getItem('thoftly_data')||'{}');
+    if(saved.wxLoc||saved.wxTemp||saved.wxForecast) return;
+  }catch(e){}
+  loadWx();
+});
 // BILLS
 let bills=[{name:'rent',amt:850,due:'apr 25',paid:false},{name:'electric',amt:95,due:'apr 22',paid:false},{name:'internet',amt:65,due:'apr 28',paid:false}];
 
@@ -2037,6 +2076,11 @@ function saveToLocal(){
       meName: document.getElementById('me-nm')?document.getElementById('me-nm').textContent:'',
       balInput: document.getElementById('b-bal-input')?document.getElementById('b-bal-input').value:'',
       wxLoc: document.getElementById('wx-loc')?document.getElementById('wx-loc').textContent:'',
+      wxTemp: document.getElementById('wx-temp')?document.getElementById('wx-temp').textContent:'',
+      wxDesc: document.getElementById('wx-desc')?document.getElementById('wx-desc').textContent:'',
+      wxIcon: document.getElementById('wx-icon')?document.getElementById('wx-icon').textContent:'',
+      wxForecast: document.getElementById('wx-fc')?document.getElementById('wx-fc').innerHTML:'',
+      generatedList: collectGeneratedList(),
     };
     localStorage.setItem('thoftly_data', JSON.stringify(data));
   }catch(e){}
@@ -2053,6 +2097,12 @@ function loadFromLocal(){
     if(data.meText){const ta=document.querySelector('.me-ta');if(ta)ta.value=data.meText;}
     if(data.meName){const nm=document.getElementById('me-nm');if(nm)nm.textContent=data.meName;}
     if(data.balInput){const bi=document.getElementById('b-bal-input');if(bi){bi.value=data.balInput;updateBillAfter();}}
+    if(data.wxLoc){const el=document.getElementById('wx-loc');if(el)el.textContent=data.wxLoc;}
+    if(data.wxTemp){const el=document.getElementById('wx-temp');if(el)el.textContent=data.wxTemp;}
+    if(data.wxDesc){const el=document.getElementById('wx-desc');if(el)el.textContent=data.wxDesc;}
+    if(data.wxIcon){const el=document.getElementById('wx-icon');if(el)el.textContent=data.wxIcon;}
+    if(data.wxForecast){const el=document.getElementById('wx-fc');if(el)el.innerHTML=data.wxForecast;}
+    if(data.generatedList) restoreGeneratedList(data.generatedList);
   }catch(e){}
 }
 
