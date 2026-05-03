@@ -764,6 +764,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 let supabaseClient = null;
 let currentUserEmail = localStorage.getItem('thoftly_email') || '';
 let pendingSecondList = false;
+let liveSaveTimer = null;
+let liveSaveInFlight = false;
 
 function getSupabase(){
   if(!window.supabase || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) return null;
@@ -864,7 +866,8 @@ function restoreGeneratedList(saved){
   });
 }
 
-async function saveFirstListToSupabase(email){
+async function saveFirstListToSupabase(email,opts){
+  opts=opts||{};
   const db=getSupabase();
   if(!db) throw new Error('Add your Supabase URL and anon key in index.html first.');
   const cleanEmail=email.trim().toLowerCase();
@@ -884,8 +887,24 @@ async function saveFirstListToSupabase(email){
 
   currentUserEmail=cleanEmail;
   localStorage.setItem('thoftly_email', cleanEmail);
-  saveToLocal();
+  if(!opts.skipLocal) saveToLocal();
   return true;
+}
+
+function scheduleLiveSave(){
+  if(!currentUserEmail) return;
+  clearTimeout(liveSaveTimer);
+  liveSaveTimer=setTimeout(async ()=>{
+    if(liveSaveInFlight) return scheduleLiveSave();
+    liveSaveInFlight=true;
+    try{
+      await saveFirstListToSupabase(currentUserEmail,{skipLocal:true});
+    }catch(e){
+      console.warn('live save failed', e);
+    }finally{
+      liveSaveInFlight=false;
+    }
+  },1200);
 }
 
 async function canCreateSecondList(){
@@ -2131,6 +2150,12 @@ function loadFromLocal(){
 setInterval(saveToLocal, 30000);
 document.addEventListener('change', saveToLocal);
 document.addEventListener('input', saveToLocal);
+document.addEventListener('change', scheduleLiveSave);
+document.addEventListener('input', scheduleLiveSave);
+document.addEventListener('click', ()=>{
+  saveToLocal();
+  scheduleLiveSave();
+});
 
 // Load on startup
 document.addEventListener('DOMContentLoaded', loadFromLocal);
