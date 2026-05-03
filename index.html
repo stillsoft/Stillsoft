@@ -554,6 +554,7 @@ body{overflow:hidden;}
 <div class="workspace-track-wrap" id="workspace-wrap">
   <div class="workspace-actions">
     <button class="btn-ghost" onclick="openExistingLogin()">log in</button>
+    <button class="btn-ghost" data-members-signout onclick="logoutUser()">log out</button>
     <button class="btn-add-col" id="add-col-btn" onclick="handleAddCol()">
       <span class="plus">+</span> <span id="add-col-label">a 2nd start</span>
     </button>
@@ -709,6 +710,10 @@ body{overflow:hidden;}
     <button class="btn-skip" onclick="closeLogin()">not now</button>
   </div>
 </div>
+<form id="ghost-members-form" data-members-form="signup" data-members-autoredirect="false" style="display:none;">
+  <input id="ghost-members-email" data-members-email type="email" required>
+  <p data-members-error></p>
+</form>
 
 <!-- WIDGET PICKER MODAL -->
 <div class="widget-picker" id="widget-picker">
@@ -790,6 +795,7 @@ body{overflow:hidden;}
   </div>
 </div>
 
+<script defer src="https://unpkg.com/@tryghost/portal@latest/umd/portal.min.js" data-ghost="https://thoftly.ghost.io"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://vnsqorbrcxiesewbhzsb.supabase.co';
@@ -802,7 +808,6 @@ let liveSaveInFlight = false;
 let applyingRemoteListUpdate = false;
 let applyingRemoteWidgetUpdate = false;
 let loginMode = 'save';
-let magicLinkAuthInitialized = false;
 
 function getSupabase(){
   if(!window.supabase || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) return null;
@@ -1690,6 +1695,20 @@ function openExistingLogin(){
   openLogin();
 }
 
+function logoutUser(){
+  currentUserEmail='';
+  pendingSecondList=false;
+  clearTimeout(liveSaveTimer);
+  localStorage.removeItem('thoftly_email');
+  localStorage.removeItem('thoftly_pending_auth');
+  const topEmail=document.getElementById('topbar-email');
+  if(topEmail) topEmail.value='';
+  const loginEmail=document.getElementById('login-email');
+  if(loginEmail) loginEmail.value='';
+  const db=getSupabase();
+  if(db&&db.auth) db.auth.signOut().catch(()=>{});
+}
+
 function openPaidGhostPortal(event){
   if(event)event.preventDefault();
   const email=currentUserEmail||localStorage.getItem('thoftly_email')||'';
@@ -1731,8 +1750,7 @@ function showHomepageHelp(){ document.getElementById('homepage-modal').classList
 function closeHomepageHelp(){ document.getElementById('homepage-modal').classList.remove('open'); }
 
 // GHOST MAGIC LINK LOGIN
-// Replace GHOST_URL with your actual Ghost site URL when deploying, e.g. https://yoursite.ghost.io
-const GHOST_URL = window.location.hostname === 'localhost' ? '' : 'https://thoftly.ghost.io';
+const GHOST_URL = 'https://thoftly.ghost.io';
 
 function openLogin(e){
   if(e)e.preventDefault();
@@ -1756,80 +1774,62 @@ function closeLogin(){
   document.getElementById('login-email').value='';
   document.getElementById('login-msg').textContent='';
 }
+
+function openGhostPortalForEmail(email,mode){
+  const flow=mode==='load'?'signin':'signup';
+  const url=email&&email.includes('@')
+    ?`${GHOST_URL}/#/portal/${flow}?email=${encodeURIComponent(email)}`
+    :`${GHOST_URL}/#/portal/${flow}`;
+  window.open(url,'_blank');
+}
+
+function sendGhostMagicLink(email,mode){
+  const form=document.getElementById('ghost-members-form');
+  const ghostEmail=document.getElementById('ghost-members-email');
+  if(!form||!ghostEmail){
+    openGhostPortalForEmail(email,mode);
+    return false;
+  }
+  form.setAttribute('data-members-form',mode==='load'?'signin':'signup');
+  ghostEmail.value=email;
+  form.classList.remove('success','error','loading');
+  if(typeof form.requestSubmit==='function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  setTimeout(()=>{
+    if(form.classList.contains('error')) openGhostPortalForEmail(email,mode);
+  },1800);
+  return true;
+}
+
 async function submitLogin(){
   const email=document.getElementById('login-email').value.trim();
   const msg=document.getElementById('login-msg');
   if(!email||!email.includes('@')){msg.textContent='please enter a valid email';msg.style.color='var(--red)';return;}
   const db=getSupabase();
-  if(!db){msg.textContent='supabase is not ready';msg.style.color='var(--red)';return;}
-  msg.textContent='sending magic link…';
+  if(!db){msg.textContent='saved starts are not ready';msg.style.color='var(--red)';return;}
+  msg.textContent=loginMode==='load'?'opening saved start…':'saving your start…';
   msg.style.color='var(--accent)';
+  const cleanEmail=email.trim().toLowerCase();
   try{
-    localStorage.setItem('thoftly_pending_auth', JSON.stringify({mode:loginMode,email:email.trim().toLowerCase()}));
-    await db.auth.signInWithOtp({
-      email,
-      options:{
-        emailRedirectTo: window.location.origin + window.location.pathname
-      }
-    });
-    msg.textContent='check your email for the magic link';
-  }catch(e){
-    msg.textContent=e.message||'could not send magic link';
-    msg.style.color='var(--red)';
-  }
-}
-
-async function completeMagicLinkLogin(session){
-  if(!session||!session.user||!session.user.email) return;
-  const pendingRaw=localStorage.getItem('thoftly_pending_auth');
-  if(!pendingRaw) return;
-  let pending;
-  try{ pending=JSON.parse(pendingRaw); }catch(e){ pending=null; }
-  if(!pending||!pending.mode) return;
-  const email=session.user.email.trim().toLowerCase();
-  currentUserEmail=email;
-  localStorage.setItem('thoftly_email', email);
-  const topEmail=document.getElementById('topbar-email');
-  if(topEmail) topEmail.value=email;
-  const loginInput=document.getElementById('login-email');
-  if(loginInput) loginInput.value=email;
-  const msg=document.getElementById('login-msg');
-  if(msg) msg.textContent=pending.mode==='load'?'opening your saved start…':'saving your start…';
-  try{
-    if(pending.mode==='load'){
-      await loadSavedStartFromSupabase(email);
-      if(msg) msg.textContent='✓ opened';
+    if(loginMode==='load'){
+      await loadSavedStartFromSupabase(cleanEmail);
+      msg.textContent='opened. sending Ghost sign-in link…';
     }else{
-      await saveFirstListToSupabase(email);
-      if(msg) msg.textContent='✓ saved';
+      await saveFirstListToSupabase(cleanEmail);
+      msg.textContent='saved. sending Ghost magic link…';
     }
-    localStorage.removeItem('thoftly_pending_auth');
+    sendGhostMagicLink(cleanEmail,loginMode);
     setTimeout(()=>{
-      closeLogin();
-      if(pendingSecondList){
+      msg.textContent='check your email for the Ghost magic link';
+      if(pendingSecondList&&loginMode!=='load'){
         pendingSecondList=false;
         handleAddCol();
       }
-    },400);
+    },500);
   }catch(e){
-    if(msg){
-      msg.textContent=e.message||'could not complete sign in';
-      msg.style.color='var(--red)';
-    }
+    msg.textContent=e.message||'could not save';
+    msg.style.color='var(--red)';
   }
-}
-
-function initMagicLinkAuth(){
-  if(magicLinkAuthInitialized) return;
-  const db=getSupabase();
-  if(!db) return;
-  magicLinkAuthInitialized=true;
-  db.auth.getSession().then(({data})=>{
-    if(data&&data.session) completeMagicLinkLogin(data.session);
-  }).catch(()=>{});
-  db.auth.onAuthStateChange((event,session)=>{
-    if(event==='SIGNED_IN'&&session) completeMagicLinkLogin(session);
-  });
 }
 
 // SAFE JSON PARSER — handles apostrophes, smart quotes, extra text
@@ -2443,7 +2443,6 @@ window.addEventListener('storage', e=>{
 
 // Load on startup
 document.addEventListener('DOMContentLoaded', loadFromLocal);
-document.addEventListener('DOMContentLoaded', initMagicLinkAuth);
 </script>
 </body>
 </html>
