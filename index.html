@@ -800,6 +800,7 @@ let pendingSecondList = false;
 let liveSaveTimer = null;
 let liveSaveInFlight = false;
 let applyingRemoteListUpdate = false;
+let applyingRemoteWidgetUpdate = false;
 
 function getSupabase(){
   if(!window.supabase || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) return null;
@@ -933,6 +934,7 @@ async function saveFirstListToSupabase(email,opts){
 }
 
 function scheduleLiveSave(){
+  if(applyingRemoteWidgetUpdate) return;
   if(!currentUserEmail) return;
   clearTimeout(liveSaveTimer);
   liveSaveTimer=setTimeout(async ()=>{
@@ -2224,6 +2226,7 @@ function addCP(id){
 }
 // ── LOCAL STORAGE PERSISTENCE ──────────────────────
 function saveToLocal(){
+  if(applyingRemoteWidgetUpdate) return;
   try{
     const data={
       bills: bills,
@@ -2244,23 +2247,57 @@ function saveToLocal(){
   }catch(e){}
 }
 
+function applyStoredData(data,opts){
+  opts=opts||{};
+  if(data.bills&&data.bills.length){bills=data.bills;renderBills();}
+  if(data.places&&data.places.length){places=data.places;renderPlaces();}
+  if(data.todos&&data.todos.length){todos=data.todos;renderTodos();}
+  if(data.meText){const ta=document.querySelector('.me-ta');if(ta)ta.value=data.meText;}
+  if(data.meName){const nm=document.getElementById('me-nm');if(nm)nm.textContent=data.meName;}
+  if(data.balInput){const bi=document.getElementById('b-bal-input');if(bi){bi.value=data.balInput;updateBillAfter();}}
+  if(data.wxLoc){const el=document.getElementById('wx-loc');if(el)el.textContent=data.wxLoc;}
+  if(data.wxTemp){const el=document.getElementById('wx-temp');if(el)el.textContent=data.wxTemp;}
+  if(data.wxDesc){const el=document.getElementById('wx-desc');if(el)el.textContent=data.wxDesc;}
+  if(data.wxIcon){const el=document.getElementById('wx-icon');if(el)el.textContent=data.wxIcon;}
+  if(data.wxForecast){const el=document.getElementById('wx-fc');if(el)el.innerHTML=data.wxForecast;}
+  const wd=data.widgetData;
+  if(wd){
+    if(wd.billDraft){
+      const n=document.getElementById('b-name');if(n)n.value=wd.billDraft.name||'';
+      const a=document.getElementById('b-amt');if(a)a.value=wd.billDraft.amount||'';
+    }
+    if(wd.todoDraft!==undefined){const t=document.getElementById('todo-input');if(t)t.value=wd.todoDraft||'';}
+    if(wd.placeDraft){
+      const pn=document.getElementById('pl-name');if(pn)pn.value=wd.placeDraft.name||'';
+      const pu=document.getElementById('pl-url');if(pu)pu.value=wd.placeDraft.url||'';
+    }
+    if(wd.weather&&wd.weather.searchInput!==undefined){
+      const wi=document.getElementById('wx-loc-in');if(wi)wi.value=wd.weather.searchInput||'';
+    }
+    if(wd.customWidgets){
+      wd.customWidgets.forEach(widget=>{
+        const card=document.getElementById(widget.id);
+        if(!card) return;
+        card.classList.toggle('min',!!widget.minimized);
+        (widget.fields||[]).forEach(field=>{
+          if(!field.id) return;
+          const el=document.getElementById(field.id);
+          if(!el) return;
+          if(el.value!==undefined) el.value=field.value||'';
+          else el.textContent=field.value||'';
+        });
+      });
+    }
+  }
+  if(!opts.skipList&&data.generatedList) restoreGeneratedList(data.generatedList);
+}
+
 function loadFromLocal(){
   try{
     const raw=localStorage.getItem('thoftly_data');
     if(!raw)return;
     const data=JSON.parse(raw);
-    if(data.bills&&data.bills.length){bills=data.bills;renderBills();}
-    if(data.places&&data.places.length){places=data.places;renderPlaces();}
-    if(data.todos&&data.todos.length){todos=data.todos;renderTodos();}
-    if(data.meText){const ta=document.querySelector('.me-ta');if(ta)ta.value=data.meText;}
-    if(data.meName){const nm=document.getElementById('me-nm');if(nm)nm.textContent=data.meName;}
-    if(data.balInput){const bi=document.getElementById('b-bal-input');if(bi){bi.value=data.balInput;updateBillAfter();}}
-    if(data.wxLoc){const el=document.getElementById('wx-loc');if(el)el.textContent=data.wxLoc;}
-    if(data.wxTemp){const el=document.getElementById('wx-temp');if(el)el.textContent=data.wxTemp;}
-    if(data.wxDesc){const el=document.getElementById('wx-desc');if(el)el.textContent=data.wxDesc;}
-    if(data.wxIcon){const el=document.getElementById('wx-icon');if(el)el.textContent=data.wxIcon;}
-    if(data.wxForecast){const el=document.getElementById('wx-fc');if(el)el.innerHTML=data.wxForecast;}
-    if(data.generatedList) restoreGeneratedList(data.generatedList);
+    applyStoredData(data);
   }catch(e){}
 }
 
@@ -2281,12 +2318,16 @@ window.addEventListener('storage', e=>{
   if(e.key==='thoftly_data'&&e.newValue){
     try{
       const data=JSON.parse(e.newValue);
-      if(!data.generatedList) return;
-      if(listSnapshot(data.generatedList)===listSnapshot(collectGeneratedList())) return;
-      applyingRemoteListUpdate=true;
-      restoreGeneratedList(data.generatedList);
-      applyingRemoteListUpdate=false;
+      applyingRemoteWidgetUpdate=true;
+      applyStoredData(data,{skipList:true});
+      applyingRemoteWidgetUpdate=false;
+      if(data.generatedList&&listSnapshot(data.generatedList)!==listSnapshot(collectGeneratedList())){
+        applyingRemoteListUpdate=true;
+        restoreGeneratedList(data.generatedList);
+        applyingRemoteListUpdate=false;
+      }
     }catch(err){
+      applyingRemoteWidgetUpdate=false;
       applyingRemoteListUpdate=false;
     }
   }
