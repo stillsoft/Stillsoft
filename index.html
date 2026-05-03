@@ -1236,8 +1236,26 @@ facts = 4 short reassuring things to know before starting, under 12 words each, 
   document.getElementById('begin-btn').disabled=false;
 }
 
-// genKnow is now combined into genChecklist — this is just a no-op
-async function genKnow(topic){ return; }
+async function genKnow(topic){
+  try{
+    const promptAtStart=window._currentPrompt;
+    const res=await fetch('/api/claude',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:350,
+        messages:[{role:'user',content:`Someone wants to: "${topic}"
+
+Return ONLY valid JSON, double quotes only, no apostrophes in values:
+{"facts":["fact 1","fact 2","fact 3","fact 4"]}
+
+facts = 4 short reassuring things to know before starting, under 12 words each, lowercase.`}]})
+    });
+    if(!res.ok)return;
+    const data=await res.json();
+    const text=data.content.map(i=>i.text||'').join('').trim();
+    const parsed=safeParseJSON(text,topic);
+    if(promptAtStart===window._currentPrompt && parsed.facts&&parsed.facts.length) renderKnow(parsed.facts);
+  }catch(e){}
+}
 
 function renderKnow(facts){
   const el=document.getElementById('know-content');
@@ -1701,6 +1719,7 @@ function showInlineQuestions(topic, questions){
       ${qHtml}
       <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
         <button class="btn-begin" id="submit-cq-btn" style="width:100%;">done with info — build my checklist →</button>
+        <button id="build-anyway-btn" style="width:100%;background:var(--accent-pale);border:1px solid var(--accent);border-radius:8px;padding:7px;font-size:11px;font-family:inherit;color:var(--accent);cursor:pointer;">build without more info</button>
         <button id="ask-more-btn" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;padding:7px;font-size:11px;font-family:inherit;color:var(--muted);cursor:pointer;">ask me more questions</button>
       </div>
     </div>`;
@@ -1709,10 +1728,24 @@ function showInlineQuestions(topic, questions){
   btn._topic=topic;
   btn._count=questions.length;
   btn.addEventListener('click',()=>submitInlineQuestions(btn._topic, btn._count, false));
+  const buildAnywayBtn=col2.querySelector('#build-anyway-btn');
+  buildAnywayBtn._topic=topic;
+  buildAnywayBtn.addEventListener('click',()=>generateWithoutMoreInfo(buildAnywayBtn._topic));
   const moreBtn=col2.querySelector('#ask-more-btn');
   moreBtn._topic=topic;
   moreBtn._count=questions.length;
   moreBtn.addEventListener('click',()=>submitInlineQuestions(moreBtn._topic, moreBtn._count, true));
+}
+
+function generateWithoutMoreInfo(topic){
+  window._currentPrompt=topic;
+  activeList=null;
+  const col2=getCol2();
+  const card=col2.querySelector('.cl-card');if(card)card.remove();
+  showLoading(topic);
+  showKnowLoading();
+  genKnow(topic);
+  genChecklistClarified(topic);
 }
 
 function submitInlineQuestions(topic, count, askMore){
@@ -1752,6 +1785,7 @@ Return ONLY valid JSON, double quotes, no apostrophes:
   } else {
     showLoading(enhanced);
     showKnowLoading();
+    genKnow(enhanced);
     genChecklistClarified(enhanced);
   }
 }
@@ -1773,6 +1807,7 @@ function submitClarify(){
   activeList=null;
   showLoading(enhanced);
   showKnowLoading();
+  genKnow(enhanced);
   genChecklistClarified(enhanced);
 }
 async function genChecklistClarified(topic){
