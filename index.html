@@ -736,7 +736,7 @@ body{overflow:hidden;}
   <div class="modal">
     <div class="m-ey">thoftly · still thoughts, start softly</div>
     <div class="m-ttl">add a 2nd start</div>
-    <div class="m-body">a 2nd start requires a paid plan. or subscribe free to save your current list &amp; edits.</div>
+    <div class="m-body">a 2nd start requires a paid Ghost subscription.</div>
     <div style="font-size:10px;color:var(--muted);margin-bottom:10px;font-weight:600;">2nd start</div>
     <div class="m-pricing" style="margin-bottom:10px;">
       <div class="pc sel" id="pc-mo" onclick="selPlan('mo')">
@@ -755,15 +755,100 @@ body{overflow:hidden;}
         <div class="pc-amt">$39</div><div class="pc-per">per year</div><div class="pc-note">unlimited · save $21</div>
       </div>
     </div>
-    <button class="btn-up" onclick="openLogin(event);closePaywall();">upgrade to add more starts</button>
-    <div style="text-align:center;margin-top:8px;">
-      <a href="#" onclick="closePaywall();openLogin(event);" style="font-size:10px;color:var(--muted);text-decoration:underline;">or subscribe free to save your current list</a>
-    </div>
+    <button class="btn-up" onclick="openPaidGhostPortal(event);closePaywall();">upgrade to add more starts</button>
     <button class="btn-skip" onclick="closePaywall()">no thanks, i'll start over</button>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL = 'https://vnsqorbrcxiesewbhzsb.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'YeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuc3FvcmJyY3hpZXNld2JoenNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzM3NzAsImV4cCI6MjA5MzQwOTc3MH0.0APBc__Fi3wt4HSj2EbDtrEjmOvCSSiK7Z04c9J9kh4';
+let supabaseClient = null;
+let currentUserEmail = localStorage.getItem('thoftly_email') || '';
+let pendingSecondList = false;
+
+function getSupabase(){
+  if(!window.supabase || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) return null;
+  if(!supabaseClient) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return supabaseClient;
+}
+
+function collectWidgetData(){
+  const customWidgets=Array.from(document.querySelectorAll('#col3 .card[id^="w-custom-"]')).map(card=>({
+    id:card.id,
+    label:card.querySelector('.card-lbl')?card.querySelector('.card-lbl').textContent:'',
+    text:Array.from(card.querySelectorAll('input,textarea,[contenteditable="true"]')).map(el=>el.value!==undefined?el.value:el.textContent)
+  }));
+  return {
+    bills:bills,
+    places:places,
+    todos:todos,
+    meText:document.querySelector('#w-me .me-ta')?document.querySelector('#w-me .me-ta').value:'',
+    meName:document.getElementById('me-nm')?document.getElementById('me-nm').textContent:'',
+    balance:document.getElementById('b-bal-input')?document.getElementById('b-bal-input').value:'',
+    weatherLocation:document.getElementById('wx-loc')?document.getElementById('wx-loc').textContent:'',
+    customWidgets:customWidgets
+  };
+}
+
+function collectGeneratedList(){
+  const card=getCol2().querySelector('.cl-card:not(#cl-ld)');
+  if(!card || card.querySelector('#submit-cq-btn')) return null;
+  return {
+    prompt:window._currentPrompt || '',
+    title:card.querySelector('.cl-title')?card.querySelector('.cl-title').textContent:'',
+    tagline:card.querySelector('.cl-tagline')?card.querySelector('.cl-tagline').textContent:'',
+    facts:Array.from(card.querySelectorAll('.know-item span')).map(el=>el.textContent),
+    sections:Array.from(card.querySelectorAll('.cl-sec')).map(sec=>({
+      name:sec.querySelector('.sec-nm')?sec.querySelector('.sec-nm').textContent:'',
+      done:sec.querySelector('.sec-ck')?sec.querySelector('.sec-ck').classList.contains('done'):false,
+      items:Array.from(sec.querySelectorAll('.cl-item')).map(item=>({
+        text:item.querySelector('.i-txt')?item.querySelector('.i-txt').textContent:'',
+        done:item.querySelector('.i-ck')?item.querySelector('.i-ck').classList.contains('done'):false
+      }))
+    }))
+  };
+}
+
+async function saveFirstListToSupabase(email){
+  const db=getSupabase();
+  if(!db) throw new Error('Add your Supabase URL and anon key in index.html first.');
+  const cleanEmail=email.trim().toLowerCase();
+  const widgetData=collectWidgetData();
+  const generatedList=collectGeneratedList();
+
+  const userRes=await db.from('users').upsert({email:cleanEmail,is_paid:false},{onConflict:'email'});
+  if(userRes.error) throw userRes.error;
+
+  const listRes=await db.from('saved_lists').upsert({
+    user_email:cleanEmail,
+    widget_data:widgetData,
+    generated_list:generatedList,
+    list_number:1
+  },{onConflict:'user_email,list_number'});
+  if(listRes.error) throw listRes.error;
+
+  currentUserEmail=cleanEmail;
+  localStorage.setItem('thoftly_email', cleanEmail);
+  saveToLocal();
+  return true;
+}
+
+async function canCreateSecondList(){
+  if(!currentUserEmail) return {allowed:false, needsEmail:true};
+  const db=getSupabase();
+  if(!db) return {allowed:false, error:'Add your Supabase URL and anon key in index.html first.'};
+  const email=currentUserEmail.trim().toLowerCase();
+  const userRes=await db.from('users').select('is_paid').eq('email',email).maybeSingle();
+  if(userRes.error) return {allowed:false, error:userRes.error.message};
+  const countRes=await db.from('saved_lists').select('id',{count:'exact',head:true}).eq('user_email',email);
+  if(countRes.error) return {allowed:false, error:countRes.error.message};
+  const isPaid=!!(userRes.data&&userRes.data.is_paid);
+  const count=countRes.count || 0;
+  return {allowed:isPaid || count<1, isPaid:isPaid, count:count};
+}
+
 // SET --vh for mobile browsers (fixes 100vh issues)
 function setVH(){document.documentElement.style.setProperty('--vh',(window.innerHeight*0.01)+'px');}
 setVH();
@@ -1310,8 +1395,8 @@ function doSmaller(){if(!activeList)return;const topic=activeList.topic+' — ju
 let wsColCount = 1;
 const FREE_WS_LIMIT = 2;
 
-function addWorkspaceCol() {
-  if (wsColCount >= FREE_WS_LIMIT) {
+function addWorkspaceCol(skipLimit) {
+  if (!skipLimit && wsColCount >= FREE_WS_LIMIT) {
     showPaywall();
     return;
   }
@@ -1383,22 +1468,42 @@ function topbarSubscribe(){
 }
 
 function openGhostPortal(){
-  window.open(`${GHOST_URL}/#/portal/signup`,'_blank');
+  openLogin();
 }
 
-function handleAddCol(){
-  // Free users get 1 list, $3/mo gets 2, $25/yr gets unlimited
-  // For now treat all as free — show upgrade modal
+function openPaidGhostPortal(event){
+  if(event)event.preventDefault();
+  const email=currentUserEmail||localStorage.getItem('thoftly_email')||'';
+  const url=email&&email.includes('@')
+    ?`${GHOST_URL}/#/portal/signup?email=${encodeURIComponent(email)}`
+    :`${GHOST_URL}/#/portal/signup`;
+  window.open(url,'_blank');
+}
+
+async function handleAddCol(){
+  pendingSecondList=true;
+  const result=await canCreateSecondList();
+  if(result.allowed){
+    pendingSecondList=false;
+    addWorkspaceCol(true);
+    return;
+  }
+  if(result.needsEmail){
+    openLogin();
+    return;
+  }
+  if(result.error){
+    alert(result.error);
+    return;
+  }
   showPaywall();
 }
 
 // COL1 SUBSCRIBE
 function col1Subscribe(){
   const email=document.getElementById('col1-email').value.trim();
-  const url=email&&email.includes('@')
-    ?`${GHOST_URL}/#/portal/signup?email=${encodeURIComponent(email)}`
-    :`${GHOST_URL}/#/portal/signup`;
-  window.open(url,'_blank');
+  openLogin();
+  if(email&&email.includes('@')) document.getElementById('login-email').value=email;
 }
 
 // HOMEPAGE HELP
@@ -1423,16 +1528,24 @@ async function submitLogin(){
   const email=document.getElementById('login-email').value.trim();
   const msg=document.getElementById('login-msg');
   if(!email||!email.includes('@')){msg.textContent='please enter a valid email';msg.style.color='var(--red)';return;}
-  // Open Ghost portal with email pre-filled
-  const portalUrl=`${GHOST_URL}/#/portal/signup?email=${encodeURIComponent(email)}`;
-  window.open(portalUrl,'_blank');
-  msg.textContent='✓ opening sign up — check your inbox for a magic link';
+  msg.textContent='saving your start…';
   msg.style.color='var(--accent)';
-  document.getElementById('login-email').value='';
-  setTimeout(()=>{
-    closeLogin();
-    if(pendingSave){pendingSave=false;doSaveList();}
-  },2000);
+  try{
+    await saveFirstListToSupabase(email);
+    msg.textContent='✓ saved';
+    document.getElementById('col1-email').value=email;
+    setTimeout(async ()=>{
+      closeLogin();
+      if(pendingSave){pendingSave=false;doSaveList();}
+      if(pendingSecondList){
+        pendingSecondList=false;
+        await handleAddCol();
+      }
+    },900);
+  }catch(e){
+    msg.textContent=e.message||'could not save right now';
+    msg.style.color='var(--red)';
+  }
 }
 
 // SAFE JSON PARSER — handles apostrophes, smart quotes, extra text
