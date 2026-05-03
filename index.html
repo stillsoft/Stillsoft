@@ -1381,6 +1381,8 @@ function renderChecklist(data,isSaved){
     </div>
   </div>`;
   col2.insertBefore(div,col2.firstChild);
+  saveToLocal();
+  scheduleLiveSave();
 }
 
 function toggleItemByBox(ckEl){
