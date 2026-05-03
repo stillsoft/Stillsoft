@@ -1188,6 +1188,7 @@ function getCol2(){ return document.getElementById('ws-col-1'); }
 function hasMainListSomewhere(){
   if(getCol2().querySelector('.cl-card:not(#cl-ld):not(.saved-chip)')) return true;
   if(localStorage.getItem('thoftly_main_list_pending')==='1') return true;
+  if(localStorage.getItem('thoftly_main_list_exists')==='1') return true;
   try{
     const saved=JSON.parse(localStorage.getItem('thoftly_data')||'{}');
     return !!(saved.generatedList&&saved.generatedList.sections&&saved.generatedList.sections.length);
@@ -1207,6 +1208,7 @@ function doBegin(){
 
 function startBegin(val){
   localStorage.setItem('thoftly_main_list_pending','1');
+  localStorage.setItem('thoftly_main_list_exists','1');
   activeList=null;
   window._currentPrompt=val;
   window._displayPrompt=val;
@@ -1395,6 +1397,8 @@ function renderChecklist(data,isSaved){
     </div>
   </div>`;
   col2.insertBefore(div,col2.firstChild);
+  localStorage.setItem('thoftly_main_list_exists','1');
+  localStorage.removeItem('thoftly_main_list_pending');
   saveToLocal();
   scheduleLiveSave();
 }
@@ -1528,6 +1532,7 @@ function clearWs(keepSaved){
         localStorage.setItem('thoftly_data',JSON.stringify(data));
       }
       localStorage.removeItem('thoftly_main_list_pending');
+      localStorage.removeItem('thoftly_main_list_exists');
     }catch(e){}
     document.getElementById('know-content').innerHTML='<div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>';
     const pill=document.getElementById('want-pill');
