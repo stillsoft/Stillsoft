@@ -462,6 +462,7 @@ body{overflow:hidden;}
 <div class="topbar">
   <span class="logo">thoftly</span>
   <div class="topbar-r">
+    <button class="btn-ghost" onclick="openExistingLogin()">log in</button>
     <a class="btn-ghost" href="https://thoftly.ghost.io/the-why/" target="_blank" style="text-decoration:none;">the why</a>
   </div>
 </div>
@@ -801,6 +802,7 @@ let liveSaveTimer = null;
 let liveSaveInFlight = false;
 let applyingRemoteListUpdate = false;
 let applyingRemoteWidgetUpdate = false;
+let loginMode = 'save';
 
 function getSupabase(){
   if(!window.supabase || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) return null;
@@ -930,6 +932,40 @@ async function saveFirstListToSupabase(email,opts){
   currentUserEmail=cleanEmail;
   localStorage.setItem('thoftly_email', cleanEmail);
   if(!opts.skipLocal) saveToLocal();
+  return true;
+}
+
+async function loadSavedStartFromSupabase(email){
+  const db=getSupabase();
+  if(!db) throw new Error('could not connect to saved starts');
+  const cleanEmail=email.trim().toLowerCase();
+  const listRes=await db.from('saved_lists').select('widget_data,generated_list').eq('user_email',cleanEmail).eq('list_number',1).maybeSingle();
+  if(listRes.error) throw listRes.error;
+  if(!listRes.data) throw new Error('no saved start found for that email');
+  const widgetData=listRes.data.widget_data||{};
+  const generatedList=listRes.data.generated_list||null;
+  const localData={
+    bills:widgetData.bills||[],
+    places:widgetData.places||[],
+    todos:widgetData.todos||[],
+    meText:widgetData.meText||'',
+    meName:widgetData.meName||'',
+    balInput:widgetData.balance||'',
+    wxLoc:widgetData.weather?widgetData.weather.location:'',
+    wxTemp:widgetData.weather?widgetData.weather.temp:'',
+    wxDesc:widgetData.weather?widgetData.weather.desc:'',
+    wxIcon:widgetData.weather?widgetData.weather.icon:'',
+    wxForecast:widgetData.weather?widgetData.weather.forecastHtml:'',
+    generatedList:generatedList,
+    widgetData:widgetData
+  };
+  currentUserEmail=cleanEmail;
+  localStorage.setItem('thoftly_email',cleanEmail);
+  localStorage.setItem('thoftly_data',JSON.stringify(localData));
+  if(generatedList&&generatedList.sections&&generatedList.sections.length){
+    localStorage.setItem('thoftly_main_list_exists','1');
+  }
+  applyStoredData(localData);
   return true;
 }
 
@@ -1645,6 +1681,12 @@ function topbarSubscribe(){
 }
 
 function openGhostPortal(){
+  loginMode='save';
+  openLogin();
+}
+
+function openExistingLogin(){
+  loginMode='load';
   openLogin();
 }
 
@@ -1679,6 +1721,7 @@ async function handleAddCol(){
 // COL1 SUBSCRIBE
 function col1Subscribe(){
   const email=document.getElementById('col1-email').value.trim();
+  loginMode='save';
   openLogin();
   if(email&&email.includes('@')) document.getElementById('login-email').value=email;
 }
@@ -1693,6 +1736,18 @@ const GHOST_URL = window.location.hostname === 'localhost' ? '' : 'https://thoft
 
 function openLogin(e){
   if(e)e.preventDefault();
+  const title=document.querySelector('#login-modal .m-ttl');
+  const body=document.querySelector('#login-modal .m-body');
+  const btn=document.querySelector('#login-modal .btn-up');
+  if(loginMode==='load'){
+    if(title)title.textContent='log in';
+    if(body)body.textContent='enter your email to open your saved start on this device.';
+    if(btn)btn.textContent='open my saved start';
+  }else{
+    if(title)title.textContent='save your starts';
+    if(body)body.textContent='enter your email to save your widgets and first start for free.';
+    if(btn)btn.textContent='subscribe free';
+  }
   document.getElementById('login-modal').classList.add('open');
   setTimeout(()=>document.getElementById('login-email').focus(),200);
 }
@@ -1705,11 +1760,16 @@ async function submitLogin(){
   const email=document.getElementById('login-email').value.trim();
   const msg=document.getElementById('login-msg');
   if(!email||!email.includes('@')){msg.textContent='please enter a valid email';msg.style.color='var(--red)';return;}
-  msg.textContent='saving your start…';
+  msg.textContent=loginMode==='load'?'opening your saved start…':'saving your start…';
   msg.style.color='var(--accent)';
   try{
-    await saveFirstListToSupabase(email);
-    msg.textContent='✓ saved';
+    if(loginMode==='load'){
+      await loadSavedStartFromSupabase(email);
+      msg.textContent='✓ opened';
+    }else{
+      await saveFirstListToSupabase(email);
+      msg.textContent='✓ saved';
+    }
     document.getElementById('col1-email').value=email;
     setTimeout(async ()=>{
       closeLogin();
