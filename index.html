@@ -1180,15 +1180,24 @@ function toggleWantPill(input){
 // checklist state
 let activeList=null;
 let pendingBeginValue='';
+let replacingMainList=false;
 
 // get the active workspace column (always first one for now)
 function getCol2(){ return document.getElementById('ws-col-1'); }
 
+function hasMainListSomewhere(){
+  if(getCol2().querySelector('.cl-card:not(#cl-ld):not(.saved-chip)')) return true;
+  if(localStorage.getItem('thoftly_main_list_pending')==='1') return true;
+  try{
+    const saved=JSON.parse(localStorage.getItem('thoftly_data')||'{}');
+    return !!(saved.generatedList&&saved.generatedList.sections&&saved.generatedList.sections.length);
+  }catch(e){return false;}
+}
+
 function doBegin(){
   const val=document.getElementById('begin-in').value.trim();
   if(!val)return;
-  const existing=getCol2().querySelector('.cl-card:not(#cl-ld)');
-  if(existing&&!existing.querySelector('#submit-cq-btn')){
+  if(!replacingMainList&&hasMainListSomewhere()){
     pendingBeginValue=val;
     showReplaceList();
     return;
@@ -1197,6 +1206,7 @@ function doBegin(){
 }
 
 function startBegin(val){
+  localStorage.setItem('thoftly_main_list_pending','1');
   activeList=null;
   window._currentPrompt=val;
   window._displayPrompt=val;
@@ -1211,7 +1221,11 @@ function closeReplaceList(){document.getElementById('replace-list-modal').classL
 function confirmReplaceList(){
   const val=pendingBeginValue||document.getElementById('begin-in').value.trim();
   closeReplaceList();
-  if(val)startBegin(val);
+  if(val){
+    replacingMainList=true;
+    startBegin(val);
+    replacingMainList=false;
+  }
 }
 async function addSecondFromReplace(){
   closeReplaceList();
@@ -1506,6 +1520,15 @@ function clearWs(keepSaved){
   }
   // reset know section and want-pill
   if(!keepSaved){
+    try{
+      const raw=localStorage.getItem('thoftly_data');
+      if(raw){
+        const data=JSON.parse(raw);
+        delete data.generatedList;
+        localStorage.setItem('thoftly_data',JSON.stringify(data));
+      }
+      localStorage.removeItem('thoftly_main_list_pending');
+    }catch(e){}
     document.getElementById('know-content').innerHTML='<div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>';
     const pill=document.getElementById('want-pill');
     if(pill){pill.classList.remove('on');pill.classList.add('off');}
