@@ -1695,7 +1695,7 @@ function openExistingLogin(){
   openLogin();
 }
 
-function logoutUser(event){
+async function logoutUser(event){
   if(event){
     event.preventDefault();
     event.stopPropagation();
@@ -1705,23 +1705,24 @@ function logoutUser(event){
   pendingSecondList=false;
   clearTimeout(liveSaveTimer);
   liveSaveInFlight=false;
-  Object.keys(localStorage)
-    .filter(key=>key.startsWith('thoftly_'))
-    .forEach(key=>localStorage.removeItem(key));
-  Object.keys(sessionStorage)
-    .filter(key=>key.startsWith('thoftly_'))
-    .forEach(key=>sessionStorage.removeItem(key));
   const topEmail=document.getElementById('topbar-email');
   if(topEmail) topEmail.value='';
   const loginEmail=document.getElementById('login-email');
   if(loginEmail) loginEmail.value='';
   const db=getSupabase();
-  const reloadClean=()=>{
-    const cleanUrl=window.location.origin+window.location.pathname+'?logged_out='+Date.now();
-    setTimeout(()=>window.location.replace(cleanUrl),50);
-  };
-  if(db&&db.auth) db.auth.signOut().catch(()=>{});
-  reloadClean();
+  try{
+    if(db&&db.auth&&typeof db.auth.signOut==='function'){
+      await db.auth.signOut();
+    }
+  }catch(e){}
+  Object.keys(localStorage)
+    .filter(key=>key.startsWith('thoftly_')||key.startsWith('sb-')||key.includes('supabase'))
+    .forEach(key=>localStorage.removeItem(key));
+  Object.keys(sessionStorage)
+    .filter(key=>key.startsWith('thoftly_')||key.startsWith('sb-')||key.includes('supabase'))
+    .forEach(key=>sessionStorage.removeItem(key));
+  const cleanUrl=window.location.origin+window.location.pathname+'?logged_out='+Date.now();
+  window.location.replace(cleanUrl);
   return false;
 }
 
