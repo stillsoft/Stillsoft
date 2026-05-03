@@ -675,17 +675,14 @@ body{overflow:hidden;}
     <div class="m-ey">thoftly · still thoughts, start softly</div>
     <div class="m-ttl">save your starts</div>
     <div class="m-body">
-      <div style="margin-bottom:10px;padding:8px 10px;background:var(--accent-pale);border-radius:8px;font-size:11px;line-height:1.7;">
-        <strong style="color:var(--accent);">free</strong> — 1 start list, widgets saved<br><strong style="color:var(--accent);">$3/mo or $25/yr</strong> — 2 start lists<br><strong style="color:var(--accent);">$5/mo or $39/yr</strong> — unlimited starts
-      </div>
-      enter your email and we'll send a magic link — no password needed.
+      enter your email to save your widgets and first start for free.
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
       <input id="login-email" type="email" placeholder="your@email.com"
         style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--text);outline:none;"
         onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')submitLogin()">
-      <button class="btn-up" onclick="submitLogin()" style="margin-bottom:0;">send magic link →</button>
+      <button class="btn-up" onclick="submitLogin()" style="margin-bottom:0;">subscribe free</button>
     </div>
     <div id="login-msg" style="font-size:11px;color:var(--accent);text-align:center;min-height:16px;font-style:italic;"></div>
     <button class="btn-skip" onclick="closeLogin()">not now</button>
@@ -778,16 +775,39 @@ function collectWidgetData(){
   const customWidgets=Array.from(document.querySelectorAll('#col3 .card[id^="w-custom-"]')).map(card=>({
     id:card.id,
     label:card.querySelector('.card-lbl')?card.querySelector('.card-lbl').textContent:'',
-    text:Array.from(card.querySelectorAll('input,textarea,[contenteditable="true"]')).map(el=>el.value!==undefined?el.value:el.textContent)
+    minimized:card.classList.contains('min'),
+    fields:Array.from(card.querySelectorAll('input,textarea,[contenteditable="true"]')).map(el=>({
+      id:el.id||'',
+      type:el.tagName.toLowerCase(),
+      value:el.value!==undefined?el.value:el.textContent
+    }))
   }));
   return {
+    savedAt:new Date().toISOString(),
+    cardOrder:Array.from(document.querySelectorAll('#col3 .card')).map(card=>card.id),
     bills:bills,
     places:places,
     todos:todos,
     meText:document.querySelector('#w-me .me-ta')?document.querySelector('#w-me .me-ta').value:'',
     meName:document.getElementById('me-nm')?document.getElementById('me-nm').textContent:'',
     balance:document.getElementById('b-bal-input')?document.getElementById('b-bal-input').value:'',
-    weatherLocation:document.getElementById('wx-loc')?document.getElementById('wx-loc').textContent:'',
+    weather:{
+      location:document.getElementById('wx-loc')?document.getElementById('wx-loc').textContent:'',
+      temp:document.getElementById('wx-temp')?document.getElementById('wx-temp').textContent:'',
+      desc:document.getElementById('wx-desc')?document.getElementById('wx-desc').textContent:'',
+      icon:document.getElementById('wx-icon')?document.getElementById('wx-icon').textContent:'',
+      forecastHtml:document.getElementById('wx-fc')?document.getElementById('wx-fc').innerHTML:'',
+      searchInput:document.getElementById('wx-loc-in')?document.getElementById('wx-loc-in').value:''
+    },
+    billDraft:{
+      name:document.getElementById('b-name')?document.getElementById('b-name').value:'',
+      amount:document.getElementById('b-amt')?document.getElementById('b-amt').value:''
+    },
+    todoDraft:document.getElementById('todo-input')?document.getElementById('todo-input').value:'',
+    placeDraft:{
+      name:document.getElementById('pl-name')?document.getElementById('pl-name').value:'',
+      url:document.getElementById('pl-url')?document.getElementById('pl-url').value:''
+    },
     customWidgets:customWidgets
   };
 }
@@ -849,7 +869,7 @@ async function saveFirstListToSupabase(email){
   if(!db) throw new Error('Add your Supabase URL and anon key in index.html first.');
   const cleanEmail=email.trim().toLowerCase();
   const widgetData=collectWidgetData();
-  const generatedList=collectGeneratedList();
+  const generatedList=collectGeneratedList() || {prompt:'',title:'',tagline:'',facts:[],sections:[]};
 
   const userRes=await db.from('users').upsert({email:cleanEmail,is_paid:false},{onConflict:'email'});
   if(userRes.error) throw userRes.error;
@@ -2081,6 +2101,7 @@ function saveToLocal(){
       wxIcon: document.getElementById('wx-icon')?document.getElementById('wx-icon').textContent:'',
       wxForecast: document.getElementById('wx-fc')?document.getElementById('wx-fc').innerHTML:'',
       generatedList: collectGeneratedList(),
+      widgetData: collectWidgetData(),
     };
     localStorage.setItem('thoftly_data', JSON.stringify(data));
   }catch(e){}
