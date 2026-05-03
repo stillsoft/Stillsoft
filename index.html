@@ -14,9 +14,13 @@
   --tag:#e6e3dc;--red:#b85c4a;--shadow:0 2px 8px rgba(0,0,0,.10);
 }
 body{font-family:'DM Sans',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:11px;min-height:100vh;line-height:1.5;}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 8px;position:sticky;top:0;z-index:200;background:var(--bg);}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 8px;position:sticky;top:0;z-index:200;background:var(--bg);gap:10px;}
 .logo{font-family:'Lora',serif;font-style:italic;font-size:15px;color:var(--text);}
+.topbar-l{display:flex;align-items:center;gap:8px;min-width:0;}
 .topbar-r{display:flex;gap:5px;align-items:center;}
+.top-sub{display:flex;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;min-width:210px;}
+.top-sub input{width:150px;background:none;border:none;padding:5px 8px;font-size:10px;font-family:inherit;color:var(--text);outline:none;min-width:0;}
+.top-sub button{background:var(--accent);color:white;border:none;padding:5px 9px;font-size:10px;font-family:inherit;cursor:pointer;white-space:nowrap;}
 .btn-ghost{font-size:10px;font-family:inherit;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 9px;color:var(--muted);cursor:pointer;}
 .btn-ghost:hover{background:var(--tag);}
 .btn-accent{font-size:12px;font-family:inherit;background:var(--accent);border:none;border-radius:20px;padding:5px 14px;color:white;cursor:pointer;}
@@ -121,7 +125,11 @@ body{overflow:hidden;}
   input,textarea,select{font-size:16px !important;}
   .topbar{padding:10px 12px 8px;}
   .logo{font-size:15px;flex-shrink:0;}
+  .topbar-l{gap:6px;flex:1;}
   .topbar-r{gap:5px;}
+  .top-sub{min-width:0;flex:1;}
+  .top-sub input{width:100%;font-size:16px !important;padding:5px 8px;}
+  .top-sub button{font-size:11px;padding:5px 8px;}
   .btn-ghost{font-size:11px;padding:5px 9px;}
   .btn-add-col{font-size:11px;padding:5px 9px;}
   .btn-add-col .plus{font-size:13px;}
@@ -460,7 +468,13 @@ body{overflow:hidden;}
 </head>
 <body>
 <div class="topbar">
-  <span class="logo">thoftly</span>
+  <div class="topbar-l">
+    <span class="logo">thoftly</span>
+    <div class="top-sub">
+      <input id="topbar-email" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')col1Subscribe()">
+      <button onclick="col1Subscribe()">subscribe</button>
+    </div>
+  </div>
   <div class="topbar-r">
     <button class="btn-ghost" onclick="openExistingLogin()">log in</button>
     <a class="btn-ghost" href="https://thoftly.ghost.io/the-why/" target="_blank" style="text-decoration:none;">the why</a>
@@ -522,20 +536,6 @@ body{overflow:hidden;}
     <div class="c1-section" id="know-wrap" style="padding-bottom:14px;">
       <div id="know-content">
         <div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>
-      </div>
-    </div>
-
-    <div class="c1-divider"></div>
-
-    <!-- subscribe row -->
-    <div class="c1-section" style="padding-top:10px;padding-bottom:10px;">
-      <div style="display:flex;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-        <input id="col1-email" type="email" placeholder="your.email@domain.com" style="flex:1;background:none;border:none;padding:6px 10px;font-size:11px;font-family:inherit;color:var(--text);outline:none;" onkeydown="if(event.key==='Enter')col1Subscribe()">
-        <button onclick="col1Subscribe()" style="background:var(--accent);color:white;border:none;padding:6px 12px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap;">subscribe</button>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-        <span class="tag-free">free to use</span>
-        <span style="font-size:10px;color:var(--muted);">to save your list &amp; edits</span>
       </div>
     </div>
 
@@ -1720,7 +1720,7 @@ async function handleAddCol(){
 
 // COL1 SUBSCRIBE
 function col1Subscribe(){
-  const email=document.getElementById('col1-email').value.trim();
+  const email=document.getElementById('topbar-email')?document.getElementById('topbar-email').value.trim():'';
   loginMode='save';
   openLogin();
   if(email&&email.includes('@')) document.getElementById('login-email').value=email;
@@ -1770,7 +1770,8 @@ async function submitLogin(){
       await saveFirstListToSupabase(email);
       msg.textContent='✓ saved';
     }
-    document.getElementById('col1-email').value=email;
+    const topEmail=document.getElementById('topbar-email');
+    if(topEmail)topEmail.value=email;
     setTimeout(async ()=>{
       closeLogin();
       if(pendingSecondList){
