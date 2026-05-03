@@ -46,12 +46,26 @@ body{overflow:hidden;}
 /* scrollable middle — only this scrolls left/right */
 .workspace-track-wrap{
   flex:1 1 auto;
+  overflow:hidden;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.workspace-actions{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  padding:10px 14px 0 12px;
+  flex-shrink:0;
+}
+.workspace-scroll{
+  flex:1 1 auto;
   overflow-x:auto;
   overflow-y:hidden;
   min-width:0;
 }
-.workspace-track-wrap::-webkit-scrollbar{height:4px;}
-.workspace-track-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.workspace-scroll::-webkit-scrollbar{height:4px;}
+.workspace-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
 .workspace-track{
   display:flex;
@@ -156,9 +170,15 @@ body{overflow:hidden;}
     flex:0 0 88vw;
     min-width:88vw;
     width:88vw;
+    overflow:hidden;
+    scroll-snap-align:start;
+    -webkit-overflow-scrolling:touch;
+  }
+  .workspace-actions{padding:10px 12px 0;flex-wrap:wrap;}
+  .workspace-scroll{
+    flex:1 1 auto;
     overflow-x:auto;
     overflow-y:hidden;
-    scroll-snap-align:start;
     -webkit-overflow-scrolling:touch;
   }
   .workspace-col{
@@ -442,10 +462,6 @@ body{overflow:hidden;}
 <div class="topbar">
   <span class="logo">thoftly</span>
   <div class="topbar-r">
-    <button class="btn-ghost" onclick="openGhostPortal()">subscribe</button>
-    <button class="btn-add-col" id="add-col-btn" onclick="handleAddCol()">
-      <span class="plus">+</span> <span id="add-col-label">add a 2nd start</span>
-    </button>
     <a class="btn-ghost" href="https://thoftly.ghost.io/the-why/" target="_blank" style="text-decoration:none;">the why</a>
   </div>
 </div>
@@ -536,17 +552,25 @@ body{overflow:hidden;}
 
 <!-- SCROLLABLE WORKSPACE TRACK -->
 <div class="workspace-track-wrap" id="workspace-wrap">
-  <div class="workspace-track" id="workspace-track">
+  <div class="workspace-actions">
+    <button class="btn-ghost" onclick="openGhostPortal()">subscribe</button>
+    <button class="btn-add-col" id="add-col-btn" onclick="handleAddCol()">
+      <span class="plus">+</span> <span id="add-col-label">add a 2nd start</span>
+    </button>
+  </div>
+  <div class="workspace-scroll">
+    <div class="workspace-track" id="workspace-track">
 
-    <!-- First workspace col (always free) -->
-    <div class="workspace-col" id="ws-col-1">
-      <div class="ws-empty" id="ws-empty">
-        <div style="font-size:22px;margin-bottom:12px;opacity:.4">✦</div>
-        Your checklist to begin<br>will appear here
-        <div style="margin-top:10px;font-size:10px;opacity:.5">type what you want to start<br>and press <strong>begin</strong></div>
+      <!-- First workspace col (always free) -->
+      <div class="workspace-col" id="ws-col-1">
+        <div class="ws-empty" id="ws-empty">
+          <div style="font-size:22px;margin-bottom:12px;opacity:.4">✦</div>
+          Your checklist to begin<br>will appear here
+          <div style="margin-top:10px;font-size:10px;opacity:.5">type what you want to start<br>and press <strong>begin</strong></div>
+        </div>
       </div>
-    </div>
 
+    </div>
   </div>
 </div>
 
