@@ -244,9 +244,6 @@ body{overflow:hidden;}
 .cl-tagline{font-size:10px;color:var(--muted);font-style:italic;margin-bottom:3px;}
 .cl-title{font-size:15px;font-weight:500;}
 .cl-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
-.cl-cnt{font-size:10px;color:var(--muted);}
-.btn-save-cl{font-size:11px;font-family:inherit;background:var(--accent);color:white;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;}
-.btn-save-cl:hover{background:var(--accent-h);}
 .btn-clr{font-size:11px;font-family:inherit;background:var(--tag);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;}
 .cl-body{padding:0 14px 14px;}
 .cl-sec{margin-bottom:14px;}
@@ -818,7 +815,8 @@ function collectGeneratedList(){
   const card=getCol2().querySelector('.cl-card:not(#cl-ld)');
   if(!card || card.querySelector('#submit-cq-btn')) return null;
   return {
-    prompt:window._currentPrompt || '',
+    prompt:window._displayPrompt || window._currentPrompt || '',
+    enhancedPrompt:window._currentPrompt || '',
     title:card.querySelector('.cl-title')?card.querySelector('.cl-title').textContent:'',
     tagline:card.querySelector('.cl-tagline')?card.querySelector('.cl-tagline').textContent:'',
     facts:Array.from(card.querySelectorAll('.list-fact span')).map(el=>el.textContent),
@@ -835,7 +833,8 @@ function collectGeneratedList(){
 
 function restoreGeneratedList(saved){
   if(!saved || !saved.sections || !saved.sections.length) return;
-  window._currentPrompt=saved.prompt||'';
+  window._displayPrompt=saved.prompt||'';
+  window._currentPrompt=saved.enhancedPrompt||saved.prompt||'';
   if(saved.facts&&saved.facts.length) renderKnow(saved.facts);
   const data={
     title:saved.title||'saved start',
@@ -1143,8 +1142,7 @@ function toggleWantPill(input){
   }
 }
 // checklist state
-let activeList=null,savedCount=0;
-const FREE_LIMIT=1;
+let activeList=null;
 
 // get the active workspace column (always first one for now)
 function getCol2(){ return document.getElementById('ws-col-1'); }
@@ -1154,6 +1152,7 @@ function doBegin(){
   if(!val)return;
   activeList=null;
   window._currentPrompt=val;
+  window._displayPrompt=val;
   showLoading(val);
   showKnowLoading();
   genChecklist(val);
@@ -1270,10 +1269,8 @@ function renderChecklist(data,isSaved){
   const col2=getCol2();
   const ex=col2.querySelector('.cl-card:not(.saved-chip)');if(ex)ex.remove();
   const em=col2.querySelector('.ws-empty');if(em)em.remove();
-  const left=FREE_LIMIT-savedCount;
-  const saveBtn=!isSaved?`<button class="btn-save-cl" onclick="saveList()">save</button><span class="cl-cnt">${left} free save${left===1?'':'s'} left</span>`:'';
   // prompt header
-  const prompt=window._currentPrompt||'';
+  const prompt=window._displayPrompt||window._currentPrompt||'';
   const promptHtml=prompt?`<div style="font-size:10px;color:var(--muted);font-style:italic;margin-bottom:8px;padding:6px 8px;background:var(--bg);border-radius:6px;">started with: "${prompt}"</div>`:'';
   // first things to know — embed in checklist so it gets saved with it
   const facts=data.facts&&data.facts.length?data.facts:[];
@@ -1309,7 +1306,7 @@ function renderChecklist(data,isSaved){
 
   div.innerHTML=`<div class="cl-hd">
     <div><div class="cl-tagline">${data.tagline||'a gentle start'}</div><div class="cl-title">${data.title}</div></div>
-    <div class="cl-acts">${saveBtn}<button class="btn-clr" onclick="clearWs()">✕</button></div>
+    <div class="cl-acts"><button class="btn-clr" onclick="clearWs()">✕</button></div>
   </div>
   <div class="cl-body">
     <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
@@ -1321,7 +1318,7 @@ function renderChecklist(data,isSaved){
     ${sectHtml}
     <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;">
       <button id="go-deeper-btn" onclick="goDeeper(this)" style="width:100%;background:var(--accent-pale);border:1px solid var(--accent);border-radius:8px;padding:8px;font-size:11px;font-family:inherit;color:var(--accent);cursor:pointer;">↑ go deeper — add more steps</button>
-      <button id="ask-more-bottom-btn" onclick="askMoreFromList(this)" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:11px;font-family:inherit;color:var(--muted);cursor:pointer;">ask me more questions</button>
+      <button id="ask-more-bottom-btn" onclick="askMoreFromList(this)" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:11px;font-family:inherit;color:var(--muted);cursor:pointer;">ask optional questions to make it more specific</button>
     </div>
   </div>`;
   col2.insertBefore(div,col2.firstChild);
@@ -1349,37 +1346,6 @@ function insertStep(input){
   row.parentElement.insertBefore(div,row);
   input.value='';
 }
-let pendingSave=false;
-
-function saveList(){
-  if(savedCount>=FREE_LIMIT){showPaywall();return;}
-  if(!activeList)return;
-  doSaveList();
-}
-
-function doSaveList(){
-  if(!activeList)return;
-  savedCount++;
-  // just mark the current checklist as saved — no new column
-  const col2=getCol2();
-  const clCard=col2.querySelector('.cl-card');
-  if(clCard){
-    // remove save button, show saved indicator
-    const saveBtn=clCard.querySelector('.btn-save-cl');
-    const cnt=clCard.querySelector('.cl-cnt');
-    if(saveBtn)saveBtn.remove();
-    if(cnt)cnt.remove();
-    const acts=clCard.querySelector('.cl-acts');
-    if(acts){
-      const saved=document.createElement('span');
-      saved.style.cssText='font-size:10px;color:var(--accent);font-style:italic;';
-      saved.textContent='✓ saved';
-      acts.insertBefore(saved,acts.firstChild);
-    }
-  }
-  activeList=null;
-}
-
 function doBeginInCol(colId){
   const input=document.getElementById('begin-in-'+colId);
   if(!input)return;
@@ -1632,7 +1598,6 @@ async function submitLogin(){
     document.getElementById('col1-email').value=email;
     setTimeout(async ()=>{
       closeLogin();
-      if(pendingSave){pendingSave=false;doSaveList();}
       if(pendingSecondList){
         pendingSecondList=false;
         await handleAddCol();
@@ -1700,6 +1665,7 @@ function showInlineQuestions(topic, questions){
   const col2=getCol2();
   const ex=col2.querySelector('.cl-card');if(ex)ex.remove();
   const em=col2.querySelector('.ws-empty');if(em)em.remove();
+  if(!window._displayPrompt) window._displayPrompt=topic;
 
   const qHtml=questions.map((q,i)=>`
     <div style="margin-bottom:10px;">
@@ -1711,15 +1677,16 @@ function showInlineQuestions(topic, questions){
   div.className='cl-card';
   div.innerHTML=`
     <div class="cl-hd">
-      <div><div class="cl-tagline">a little more info helps</div><div class="cl-title" style="font-size:14px;">tell me more</div></div>
+      <div><div class="cl-tagline">optional details can help</div><div class="cl-title" style="font-size:14px;">make it more specific</div></div>
       <div class="cl-acts"><button class="btn-clr" onclick="clearWs()">✕</button></div>
     </div>
     <div class="cl-body">
       <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-style:italic;">you said: "${topic}"</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6;">answer any that feel useful, or skip them and get a simple list now.</div>
       ${qHtml}
       <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
         <button class="btn-begin" id="submit-cq-btn" style="width:100%;">done with info — build my checklist →</button>
-        <button id="build-anyway-btn" style="width:100%;background:var(--accent-pale);border:1px solid var(--accent);border-radius:8px;padding:7px;font-size:11px;font-family:inherit;color:var(--accent);cursor:pointer;">build without more info</button>
+        <button id="build-anyway-btn" style="width:100%;background:var(--accent-pale);border:1px solid var(--accent);border-radius:8px;padding:7px;font-size:11px;font-family:inherit;color:var(--accent);cursor:pointer;">skip questions — build a simple list</button>
         <button id="ask-more-btn" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;padding:7px;font-size:11px;font-family:inherit;color:var(--muted);cursor:pointer;">ask me more questions</button>
       </div>
     </div>`;
@@ -1738,6 +1705,7 @@ function showInlineQuestions(topic, questions){
 }
 
 function generateWithoutMoreInfo(topic){
+  if(!window._displayPrompt) window._displayPrompt=topic;
   window._currentPrompt=topic;
   activeList=null;
   const col2=getCol2();
@@ -1755,6 +1723,7 @@ function submitInlineQuestions(topic, count, askMore){
     if(el&&el.value.trim()) answers.push(el.value.trim());
   }
   const enhanced=topic+(answers.length?' — '+answers.join('. '):'');
+  if(!window._displayPrompt) window._displayPrompt=topic;
   window._currentPrompt=enhanced;
   activeList=null;
   const col2=getCol2();
@@ -1798,6 +1767,7 @@ function submitClarify(){
   const state=document.getElementById('cl-state').value.trim();
   const budget=document.getElementById('cl-budget').value.trim();
   const base=window._currentPrompt||'start a business';
+  if(!window._displayPrompt) window._displayPrompt=base;
   let enhanced=base;
   if(type) enhanced+=` — specifically a ${type}`;
   if(state) enhanced+=` in ${state}`;
