@@ -1533,6 +1533,7 @@ function clearWs(keepSaved){
       }
       localStorage.removeItem('thoftly_main_list_pending');
       localStorage.removeItem('thoftly_main_list_exists');
+      localStorage.setItem('thoftly_clear_main_list_at',String(Date.now()));
     }catch(e){}
     document.getElementById('know-content').innerHTML='<div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>';
     const pill=document.getElementById('want-pill');
@@ -1540,6 +1541,21 @@ function clearWs(keepSaved){
     const wck=document.getElementById('want-ck');
     if(wck){wck.classList.remove('on');wck.classList.add('off');wck.innerHTML='';}
   }
+}
+
+function clearWsFromOtherTab(){
+  clearWs(true);
+  try{
+    const raw=localStorage.getItem('thoftly_data');
+    if(raw){
+      const data=JSON.parse(raw);
+      delete data.generatedList;
+      localStorage.setItem('thoftly_data',JSON.stringify(data));
+    }
+    localStorage.removeItem('thoftly_main_list_pending');
+    localStorage.removeItem('thoftly_main_list_exists');
+  }catch(e){}
+  document.getElementById('know-content').innerHTML='<div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>';
 }
 function doSmaller(){if(!activeList)return;const topic=activeList.topic+' — just the very first tiny step';activeList=null;showLoading('something smaller…');genChecklist(topic);}
 // ADD WORKSPACE COLUMN
@@ -2249,6 +2265,11 @@ document.addEventListener('input', scheduleLiveSave);
 document.addEventListener('click', ()=>{
   saveToLocal();
   scheduleLiveSave();
+});
+window.addEventListener('storage', e=>{
+  if(e.key==='thoftly_clear_main_list_at'&&e.newValue){
+    clearWsFromOtherTab();
+  }
 });
 
 // Load on startup
