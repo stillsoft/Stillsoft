@@ -710,7 +710,7 @@ body{overflow:hidden;}
     <button class="btn-skip" onclick="closeLogin()">not now</button>
   </div>
 </div>
-<form id="ghost-members-form" data-members-form="signup" data-members-autoredirect="false" style="display:none;">
+<form id="ghost-members-form" data-members-form="signup" data-members-autoredirect="false" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;">
   <input id="ghost-members-email" data-members-email type="email" required>
   <p data-members-error></p>
 </form>
@@ -796,6 +796,7 @@ body{overflow:hidden;}
 </div>
 
 <script defer src="https://unpkg.com/@tryghost/portal@latest/umd/portal.min.js" data-ghost="https://thoftly.ghost.io"></script>
+<script src="https://cdn.jsdelivr.net/ghost/signup-form@~0.3/umd/signup-form.min.js" data-site="https://thoftly.ghost.io/" async></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://vnsqorbrcxiesewbhzsb.supabase.co';
@@ -1801,7 +1802,19 @@ function openGhostPortalForEmail(email,mode){
 }
 
 function sendGhostMagicLink(email,mode){
-  openGhostPortalForEmail(email,mode);
+  const form=document.getElementById('ghost-members-form');
+  const ghostEmail=document.getElementById('ghost-members-email');
+  if(!form||!ghostEmail){
+    openGhostPortalForEmail(email,mode);
+    return false;
+  }
+  form.setAttribute('data-members-form',mode==='load'?'signin':'signup');
+  if(mode==='load') form.setAttribute('data-members-otc','true');
+  else form.removeAttribute('data-members-otc');
+  ghostEmail.value=email;
+  form.classList.remove('success','error','loading');
+  if(typeof form.requestSubmit==='function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
   return true;
 }
 
