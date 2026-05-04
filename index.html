@@ -1801,20 +1801,7 @@ function openGhostPortalForEmail(email,mode){
 }
 
 function sendGhostMagicLink(email,mode){
-  const form=document.getElementById('ghost-members-form');
-  const ghostEmail=document.getElementById('ghost-members-email');
-  if(!form||!ghostEmail){
-    openGhostPortalForEmail(email,mode);
-    return false;
-  }
-  form.setAttribute('data-members-form',mode==='load'?'signin':'signup');
-  ghostEmail.value=email;
-  form.classList.remove('success','error','loading');
-  if(typeof form.requestSubmit==='function') form.requestSubmit();
-  else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
-  setTimeout(()=>{
-    if(form.classList.contains('error')) openGhostPortalForEmail(email,mode);
-  },1800);
+  openGhostPortalForEmail(email,mode);
   return true;
 }
 
