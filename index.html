@@ -1824,13 +1824,13 @@ async function submitLogin(){
   if(!email||!email.includes('@')){msg.textContent='please enter a valid email';msg.style.color='var(--red)';return;}
   const db=getSupabase();
   if(!db){msg.textContent='saved starts are not ready';msg.style.color='var(--red)';return;}
-  msg.textContent=loginMode==='load'?'opening saved start…':'saving your start…';
+  msg.textContent=loginMode==='load'?'sending sign-in email…':'saving your start…';
   msg.style.color='var(--accent)';
   const cleanEmail=email.trim().toLowerCase();
   try{
     if(loginMode==='load'){
-      await loadSavedStartFromSupabase(cleanEmail);
-      msg.textContent='opened. sending Ghost sign-in link…';
+      currentUserEmail='';
+      msg.textContent='sending Ghost sign-in link…';
     }else{
       await saveFirstListToSupabase(cleanEmail);
       msg.textContent='saved. sending Ghost magic link…';
