@@ -1795,9 +1795,9 @@ function closeLogin(){
 function openGhostPortalForEmail(email,mode){
   const flow=mode==='load'?'signin':'signup';
   const url=email&&email.includes('@')
-    ?`${GHOST_URL}/#/portal/${flow}?email=${encodeURIComponent(email)}`
-    :`${GHOST_URL}/#/portal/${flow}`;
-  window.open(url,'_blank');
+    ?`#/portal/${flow}?email=${encodeURIComponent(email)}`
+    :`#/portal/${flow}`;
+  window.location.hash=url.replace(/^#/, '');
 }
 
 function sendGhostMagicLink(email,mode){
