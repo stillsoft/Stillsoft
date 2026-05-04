@@ -714,6 +714,7 @@ body{overflow:hidden;}
   <input id="ghost-members-email" data-members-email type="email" required>
   <p data-members-error></p>
 </form>
+<a id="ghost-signout" href="javascript:" data-members-signout style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;">Sign out</a>
 
 <!-- WIDGET PICKER MODAL -->
 <div class="widget-picker" id="widget-picker">
@@ -1706,6 +1707,8 @@ async function logoutUser(event){
   pendingSecondList=false;
   clearTimeout(liveSaveTimer);
   liveSaveInFlight=false;
+  const ghostSignout=document.getElementById('ghost-signout');
+  if(ghostSignout) ghostSignout.click();
   const topEmail=document.getElementById('topbar-email');
   if(topEmail) topEmail.value='';
   const loginEmail=document.getElementById('login-email');
