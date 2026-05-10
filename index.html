@@ -1,0 +1,3066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>thoftly</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#e8e4dc;--card:#faf8f4;--card2:#ffffff;--border:#d4cfc7;
+  --text:#2a2825;--muted:#8f8b85;--soft:#b5b1aa;
+  --accent:#4a5c3f;--accent-h:#3d4f34;--accent-pale:#eef0eb;
+  --tag:#e6e3dc;--red:#b85c4a;--shadow:0 2px 8px rgba(0,0,0,.10);
+}
+body{font-family:'DM Sans',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:11px;min-height:100vh;line-height:1.5;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 8px;position:sticky;top:0;z-index:200;background:var(--bg);gap:10px;}
+.logo{font-family:'Lora',serif;font-style:italic;font-size:15px;color:var(--text);}
+.topbar-l{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;}
+.topbar-r{display:flex;gap:5px;align-items:center;}
+.top-sub{display:flex;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;min-width:160px;max-width:190px;flex:0 0 190px;}
+.top-sub input{width:92px;background:none;border:none;padding:4px 6px;font-size:10px;font-family:inherit;color:var(--text);outline:none;min-width:0;flex:1 1 auto;}
+.top-sub button{background:var(--accent);color:white;border:none;padding:4px 7px;font-size:10px;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.sub-tagline-row{display:flex;justify-content:flex-start;padding:0 16px 6px;background:var(--bg);position:sticky;top:34px;z-index:199;}
+.sub-tagline-row span{font-size:9px;color:var(--muted);font-style:italic;font-family:'Lora',serif;margin-left:calc(15px + 8px + 92px);line-height:1;}
+.btn-ghost{font-size:10px;font-family:inherit;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 9px;color:var(--muted);cursor:pointer;}
+.btn-ghost:hover{background:var(--tag);}
+.btn-accent{font-size:12px;font-family:inherit;background:var(--accent);border:none;border-radius:20px;padding:5px 14px;color:white;cursor:pointer;}
+.btn-accent:hover{background:var(--accent-h);}
+/* ── LAYOUT ───────────────────────────────────────── */
+body{overflow-x:hidden;overflow-y:auto;}
+
+.page{
+  display:flex;
+  flex-direction:row;
+  min-height:calc(var(--vh, 1vh) * 100 - 49px);
+  align-items:flex-start;
+}
+
+/* fixed left */
+#col1{
+  width:300px;
+  min-width:300px;
+  flex-shrink:0;
+  padding:14px 12px 40px 16px;
+}
+
+/* fixed right */
+#col3{
+  width:320px;
+  min-width:320px;
+  flex-shrink:0;
+  padding:10px 14px 40px 10px;
+  border-left:1px solid var(--border);
+}
+
+/* fixed far-right places sidebar */
+#col4{
+  width:200px;
+  min-width:200px;
+  flex-shrink:0;
+  padding:10px 12px 40px 10px;
+  border-left:1px solid var(--border);
+}
+
+/* scrollable middle — only this scrolls left/right */
+.workspace-track-wrap{
+  flex:1 1 auto;
+  min-width:420px;
+  display:flex;
+  flex-direction:column;
+}
+.workspace-actions{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  padding:10px 14px 0 12px;
+  flex-shrink:0;
+  position:sticky;
+  top:0;
+  background:var(--bg);
+  z-index:10;
+}
+.workspace-scroll{
+  flex:1 1 auto;
+  overflow-x:auto;
+  overflow-y:visible;
+  min-width:0;
+}
+.workspace-scroll::-webkit-scrollbar{height:4px;}
+.workspace-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+.workspace-track{
+  display:flex;
+  flex-direction:row;
+  gap:12px;
+  padding:14px 14px 80px 12px;
+  align-items:flex-start;
+  width:max-content; /* key: don't wrap */
+}
+
+.workspace-col{
+  width:380px;
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding-bottom:40px;
+}
+.workspace-col::-webkit-scrollbar{display:none;}
+
+/* compact place rows in slim sidebar */
+#col4 .pl-row{padding:4px 6px;gap:4px;}
+#col4 .pl-ico{width:18px;height:18px;font-size:9px;flex-shrink:0;}
+#col4 .pl-nm{font-size:10px;}
+#col4 .pl-rm{font-size:11px;}
+.pl-add-stack{display:flex;flex-direction:column;gap:4px;}
+.pl-add-stack .pl-in{width:100%;}
+.pl-add-stack .pl-in-url{width:100%;}
+.pl-add-stack .btn-add-sm{width:100%;margin-top:2px;}
+
+/* add column button */
+.btn-add-col{
+  font-size:11px;font-family:inherit;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:20px;padding:5px 12px;
+  color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;gap:5px;
+  transition:background .15s,color .15s;
+}
+.btn-add-col:hover{background:var(--accent-pale);color:var(--accent);}
+.btn-add-col .plus{font-size:15px;line-height:1;}
+
+/* ── MOBILE ───────────────────────────────────────── */
+@media(max-width:768px){
+  body{overflow:auto;font-size:13px;}
+  /* iOS zoom fix */
+  input,textarea,select{font-size:16px !important;}
+  .topbar{padding:10px 12px 8px;}
+  .logo{font-size:15px;flex-shrink:0;}
+  .topbar-l{gap:6px;flex:1 1 auto;min-width:0;}
+  .topbar-r{gap:5px;}
+  .top-sub{min-width:0;flex:0 0 250px;max-width:250px;}
+  .top-sub input{width:158px;font-size:16px !important;padding:4px 5px;}
+  .top-sub button{font-size:9px;padding:4px 5px;border-radius:20px;}
+  .sub-tagline-row{padding:0 12px 5px;}
+  .sub-tagline-row span{margin-left:calc(15px + 6px + 158px + 18px);font-size:9px;}
+  .btn-ghost{font-size:11px;padding:5px 9px;}
+  .btn-add-col{font-size:11px;padding:5px 9px;}
+  .btn-add-col .plus{font-size:13px;}
+  .card-lbl{font-size:12px;}
+  .card-sub{font-size:10px;}
+  .cl-time{font-size:34px;}
+  .cl-date{font-size:13px;}
+  .cal-d{font-size:13px;height:36px;}
+  .cal-d.td{width:36px;height:36px;}
+  .cal-dn{font-size:11px;}
+  .know-item{font-size:12px;}
+  .know-hint{font-size:12px;}
+  .in-lbl{font-size:12px;}
+  .begin-in{font-size:14px !important;}
+  .btn-begin{font-size:14px !important;}
+  .pill-check{font-size:12px;}
+  .b-row{font-size:13px;}
+  .todo-text{font-size:13px;}
+  .pl-nm{font-size:12px;}
+  .chip{font-size:11px;}
+
+  /* whole page is one horizontal snap scroll */
+  .page{
+    display:flex;
+    flex-direction:row;
+    height:calc(var(--vh,1vh)*100 - 45px);
+    overflow-x:scroll;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .page::-webkit-scrollbar{display:none;}
+
+  /* col1 snaps as first panel */
+  #col1{
+    flex:0 0 88vw;
+    min-width:88vw;
+    width:88vw;
+    overflow-y:auto;
+    scroll-snap-align:start;
+    padding:10px 12px 40px;
+  }
+
+  /* workspace track wraps as one snap panel showing workspace cols inside */
+  .workspace-track-wrap{
+    flex:0 0 88vw;
+    min-width:88vw;
+    width:88vw;
+    overflow:hidden;
+    scroll-snap-align:start;
+    -webkit-overflow-scrolling:touch;
+  }
+  .workspace-actions{padding:10px 12px 0;flex-wrap:wrap;}
+  .workspace-scroll{
+    flex:1 1 auto;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+  .workspace-col{
+    width:82vw;
+    max-height:calc(var(--vh,1vh)*100 - 90px);
+    overflow-y:auto;
+  }
+
+  /* col3 snaps as last panel */
+  #col3{
+    flex:0 0 88vw;
+    min-width:88vw;
+    width:88vw;
+    overflow-y:auto;
+    scroll-snap-align:start;
+    border-left:none;
+    padding:10px 12px 40px;
+  }
+  /* col4 (places) snaps as the actual last panel */
+  #col4{
+    flex:0 0 65vw;
+    min-width:65vw;
+    width:65vw;
+    overflow-y:auto;
+    scroll-snap-align:start;
+    border-left:none;
+    padding:10px 12px 40px;
+  }
+}
+.card{background:#faf8f4;border:1px solid #d4cfc7;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.09);overflow:hidden;}
+.card-hd{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 12px 0;}
+.card-lbl{font-size:10px;font-weight:500;color:var(--text);}
+.card-sub{font-size:9px;color:var(--muted);margin-top:0;}
+.card-bd{padding:6px 12px 10px;}
+.card-bdf{padding:10px 12px;}
+.wctrl{display:flex;gap:4px;}
+.wbtn{width:20px;height:20px;background:var(--tag);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;transition:background .15s;}
+.wbtn:hover{background:var(--border);color:var(--text);}
+.card.min .card-bd,.card.min .card-bdf{display:none;}
+.card.min{box-shadow:none;}
+/* clock */
+.cl-wrap{padding:12px 14px 0;}
+.cl-ey{font-size:9px;color:var(--soft);letter-spacing:.08em;margin-bottom:2px;}
+.cl-time{font-size:28px;font-weight:300;letter-spacing:-.03em;line-height:1;}
+.cl-date{font-size:11px;color:var(--muted);margin-top:2px;margin-bottom:8px;}
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.cal-title{font-size:12px;font-weight:500;}
+.cal-navs{display:flex;gap:3px;}
+.cal-navs button,.cal-today{background:var(--tag);border:none;border-radius:5px;padding:2px 6px;font-size:10px;color:var(--muted);cursor:pointer;font-family:inherit;}
+.cal-navs button:hover,.cal-today:hover{background:var(--border);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;}
+.cal-dn{font-size:9px;color:var(--soft);text-align:center;padding:3px 0;}
+.cal-d{font-size:10px;color:var(--muted);text-align:center;padding:2px 1px;border-radius:50%;cursor:pointer;height:30px;display:flex;align-items:center;justify-content:center;transition:background .1s;}
+.cal-d:hover{background:var(--tag);}
+.cal-d.td{background:var(--accent);color:white;font-weight:500;width:30px;height:30px;margin:0 auto;}
+.cal-d.dim{opacity:.35;}
+.cal-foot{font-size:9px;color:var(--soft);text-align:center;padding:6px 0 10px;font-style:italic;}
+/* tools */
+.t-ey{font-size:9px;color:var(--soft);letter-spacing:.08em;margin-bottom:2px;}
+.t-ttl{font-size:12px;font-weight:500;margin-bottom:8px;}
+.t-auth{display:flex;gap:6px;align-items:center;margin-bottom:12px;}
+.tag-free{font-size:10px;background:var(--tag);border:1px solid var(--border);border-radius:20px;padding:2px 8px;color:var(--muted);}
+.auth-lnk{font-size:10px;color:var(--muted);}
+.auth-lnk a{color:var(--accent);text-decoration:none;}
+.know{margin-bottom:12px;display:flex;flex-direction:column;gap:5px;}
+.krow{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);}
+.kck{width:15px;height:15px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.kck.on{background:var(--accent);}
+.kck.on svg{display:block;}
+.kck.off{border:1.5px solid var(--border);}
+.kck svg{width:9px;height:7px;display:none;}
+.krow strong{color:var(--text);font-weight:500;}
+.krow-toggle:hover span{color:var(--accent);}
+.krow-toggle:hover .kck.off{border-color:var(--accent);}
+.kck{transition:background .15s,border-color .15s;}
+.in-lbl{font-size:10px;color:var(--muted);margin-bottom:5px;}
+.begin-row{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.begin-in{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;}
+.begin-in::placeholder{color:var(--soft);}
+.begin-in:focus{border-color:var(--accent);}
+.btn-begin{width:100%;background:var(--accent);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-family:inherit;cursor:pointer;white-space:nowrap;}
+.btn-begin:hover{background:var(--accent-h);}
+.btn-begin:disabled{opacity:.45;cursor:not-allowed;}
+.chips{display:flex;flex-direction:column;gap:3px;}
+.chip{font-size:10px;color:var(--soft);cursor:pointer;padding:2px 0;transition:color .1s;border:none;background:none;font-family:inherit;text-align:left;}
+.chip:hover{color:var(--accent);}
+/* workspace */
+.ws-empty{background:var(--card);border:1px dashed var(--border);border-radius:14px;padding:48px 24px;text-align:center;color:var(--soft);font-size:12px;font-style:italic;line-height:1.8;}
+.ws-empty strong{color:var(--muted);font-style:normal;}
+/* checklist */
+.cl-card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);}
+.cl-hd{padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.cl-tagline{font-size:10px;color:var(--muted);font-style:italic;margin-bottom:3px;}
+.cl-title{font-size:15px;font-weight:500;}
+.cl-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.btn-clr{font-size:11px;font-family:inherit;background:var(--tag);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;}
+.cl-body{padding:0 14px 14px;}
+.cl-sec{margin-bottom:14px;}
+.cl-sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.sec-ck{width:16px;height:16px;border:1.5px solid var(--border);border-radius:5px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.sec-ck.done{background:var(--accent);border-color:var(--accent);}
+.sec-ck.done::after{content:'';width:8px;height:6px;border-left:1.5px solid white;border-bottom:1.5px solid white;transform:rotate(-45deg) translateY(-1px);}
+.sec-nm{font-size:12px;font-weight:500;}
+.cl-items{margin-left:24px;display:flex;flex-direction:column;gap:4px;}
+.cl-item{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:var(--muted);padding:2px 0;}
+.cl-item:hover .i-del{opacity:1;}
+.i-ck{width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.i-ck.done{background:var(--accent);border-color:var(--accent);}
+.i-ck.done::after{content:'';width:6px;height:4px;border-left:1.5px solid white;border-bottom:1.5px solid white;transform:rotate(-45deg) translateY(-1px);}
+.i-txt{flex:1;outline:none;border-bottom:1px solid transparent;padding:0;background:none;font-family:inherit;font-size:12px;color:var(--muted);min-width:0;cursor:text;}
+.i-txt:focus{border-bottom-color:var(--border);color:var(--text);}
+.i-txt.done-t{text-decoration:line-through;color:var(--soft);}
+.i-del{opacity:0;background:none;border:none;cursor:pointer;color:var(--soft);font-size:14px;line-height:1;flex-shrink:0;margin-top:1px;}
+.i-del:hover{color:var(--red);}
+.add-row{display:flex;align-items:center;gap:5px;margin-left:24px;margin-top:3px;}
+.add-in{font-size:11px;background:none;border:none;border-bottom:1px solid var(--border);padding:2px 4px;font-family:inherit;color:var(--text);outline:none;flex:1;}
+.add-in::placeholder{color:var(--soft);}
+.add-btn{width:16px;height:16px;background:var(--tag);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);line-height:1;}
+.add-btn:hover{background:var(--accent);color:white;}
+.start-sm{font-size:11px;color:var(--soft);font-style:italic;text-align:center;margin-top:6px;cursor:pointer;}
+.start-sm:hover{color:var(--accent);}
+.saved-chip{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;}
+.saved-chip:hover{background:var(--tag);}
+.sc-title{font-size:12px;font-weight:500;margin-bottom:2px;}
+.sc-sub{font-size:10px;color:var(--muted);font-style:italic;}
+.ldots{display:flex;align-items:center;gap:6px;padding:30px 20px;font-size:12px;color:var(--soft);font-style:italic;}
+.ldots span{animation:ld 1.2s infinite;font-size:18px;}
+.ldots span:nth-child(2){animation-delay:.2s;}
+.ldots span:nth-child(3){animation-delay:.4s;}
+@keyframes ld{0%,80%,100%{opacity:.15}40%{opacity:1}}
+/* me */
+.me-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.me-av{width:28px;height:28px;border-radius:50%;background:var(--accent-pale);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;overflow:hidden;}
+.me-av svg,.me-av img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%;}
+.me-nm{font-size:11px;font-weight:500;outline:none;min-width:60px;flex:1 1 auto;border-bottom:1px dashed transparent;padding:1px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.me-nm:hover{border-bottom-color:var(--border);}
+.me-nm:focus{border-bottom-color:var(--accent);}
+.me-nm:empty::before{content:attr(data-placeholder);color:var(--soft);font-style:italic;font-weight:400;}
+.wlbl{font-size:8px;color:var(--soft);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.me-ta{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 7px;font-size:11px;font-family:inherit;color:var(--text);outline:none;resize:none;line-height:1.4;min-height:36px;overflow:hidden;}
+.me-ta:focus{border-color:var(--accent);}
+/* weather */
+.wx-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px;}
+.wx-temp{font-size:22px;font-weight:300;letter-spacing:-.03em;line-height:1;}
+.wx-icon{font-size:18px;}
+.wx-desc{font-size:9px;color:var(--muted);margin-bottom:6px;}
+.wx-fc{display:flex;flex-direction:column;gap:2px;}
+.wx-row{display:flex;align-items:center;font-size:9px;color:var(--muted);gap:5px;}
+.wx-day{width:26px;}
+.wx-fi{font-size:10px;}
+.wx-hi{color:var(--text);}
+.wx-lo{color:var(--soft);margin-left:2px;}
+.wx-chg{font-size:9px;color:var(--soft);text-align:right;margin-top:8px;cursor:pointer;}
+.wx-chg:hover{color:var(--accent);}
+/* bills */
+.b-bal-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.b-bal-l{font-size:10px;color:var(--muted);}
+.b-bal-input{font-size:15px;font-weight:400;letter-spacing:-.01em;border:none;background:none;text-align:right;width:100px;font-family:inherit;color:var(--text);outline:none;border-bottom:1px solid transparent;transition:border-color .15s;}
+.b-bal-input:focus{border-bottom-color:var(--accent);}
+.b-bal-input::-webkit-inner-spin-button,.b-bal-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.b-list{display:flex;flex-direction:column;gap:3px;margin-bottom:6px;}
+.b-row{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);}
+.b-cb{width:13px;height:13px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;cursor:pointer;}
+.b-cb.paid{background:var(--accent);border-color:var(--accent);}
+.b-n{flex:1;}
+.b-a{color:var(--text);}
+.b-due{font-size:9px;color:var(--soft);}
+.b-rm{background:none;border:none;cursor:pointer;color:var(--soft);font-size:14px;line-height:1;padding:0 2px;flex-shrink:0;transition:color .15s;}
+.b-rm:hover{color:var(--red);}
+.b-edit-name{flex:1;background:none;border:none;border-bottom:1px solid transparent;font-size:11px;font-family:inherit;color:var(--text);outline:none;min-width:0;transition:border-color .15s;}
+.b-edit-name:focus{border-bottom-color:var(--accent);}
+.b-edit-amt{width:52px;background:none;border:none;border-bottom:1px solid transparent;font-size:11px;font-family:inherit;color:var(--text);outline:none;text-align:right;transition:border-color .15s;}
+.b-edit-amt:focus{border-bottom-color:var(--accent);}
+.b-edit-amt::-webkit-inner-spin-button,.b-edit-amt::-webkit-outer-spin-button{-webkit-appearance:none;}
+.b-paid-text{text-decoration:line-through;color:var(--soft)!important;}
+.b-add{display:flex;gap:5px;align-items:center;padding-top:6px;border-top:1px solid var(--border);margin-bottom:6px;}
+.b-in{flex:1;background:none;border:none;border-bottom:1px solid var(--border);padding:3px;font-size:11px;font-family:inherit;color:var(--text);outline:none;}
+.b-in::placeholder{color:var(--soft);}
+.b-in-sm{width:50px;text-align:right;}
+.btn-add-sm{background:var(--accent);color:white;border:none;border-radius:6px;padding:3px 9px;font-size:10px;font-family:inherit;cursor:pointer;}
+.b-after{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);padding-top:6px;border-top:1px solid var(--border);}
+.b-after-n{font-weight:500;color:var(--text);}
+/* places */
+.pl-hint{font-size:8px;color:var(--soft);margin-bottom:5px;font-style:italic;}
+.pl-list{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+.pl-row{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 8px;transition:background .1s;}
+.pl-row:hover{background:var(--tag);}
+.pl-ico{width:18px;height:18px;border-radius:4px;background:var(--tag);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--accent);font-weight:500;flex-shrink:0;}
+.pl-nm{flex:1;font-size:11px;color:var(--text);text-decoration:none;}
+.pl-rm{font-size:14px;color:var(--soft);background:none;border:none;cursor:pointer;opacity:0;transition:opacity .15s,color .15s;line-height:1;padding:0 2px;}
+.pl-row:hover .pl-rm{opacity:1;}
+.pl-rm:hover{color:var(--red);}
+.pl-add{display:flex;gap:5px;align-items:center;}
+.pl-in{flex:1;background:none;border:none;border-bottom:1px solid var(--border);padding:3px;font-size:11px;font-family:inherit;color:var(--text);outline:none;}
+.pl-in::placeholder{color:var(--soft);}
+.pl-in-url{width:70px;}
+/* one thing */
+.one-txt{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);margin-bottom:8px;outline:none;min-height:38px;}
+.one-txt:focus{border-color:var(--accent);}
+.done-row{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--muted);}
+.d-cb{width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;cursor:pointer;}
+.d-cb.done{background:var(--accent);border-color:var(--accent);}
+/* paywall */
+.overlay{position:fixed;inset:0;background:rgba(30,27,24,.35);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--card2);border:1px solid var(--border);border-radius:18px;padding:28px 28px 22px;max-width:300px;width:92%;transform:translateY(12px);transition:transform .2s;box-shadow:0 8px 32px rgba(0,0,0,.12);}
+.overlay.open .modal{transform:translateY(0);}
+.m-ey{font-size:10px;color:var(--muted);margin-bottom:6px;}
+.m-ttl{font-family:'Lora',serif;font-size:18px;font-style:italic;margin-bottom:8px;}
+.m-body{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;}
+.m-body em{color:var(--accent);font-style:normal;font-weight:500;}
+.m-pricing{display:flex;gap:8px;margin-bottom:18px;}
+.pc{flex:1;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--card);}
+.pc:hover,.pc.sel{border-color:var(--accent);background:var(--accent-pale);}
+.pc-amt{font-size:16px;font-weight:500;}
+.pc-per{font-size:10px;color:var(--muted);}
+.pc-note{font-size:9px;color:var(--accent);margin-top:2px;font-style:italic;}
+.btn-up{display:block;width:100%;background:var(--accent);color:white;border:none;border-radius:10px;padding:11px;font-size:13px;font-family:inherit;cursor:pointer;margin-bottom:8px;}
+.btn-up:hover{background:var(--accent-h);}
+.btn-skip{display:block;width:100%;background:none;border:none;font-size:11px;color:var(--soft);cursor:pointer;font-family:inherit;padding:4px;}
+.btn-skip:hover{color:var(--muted);}
+/* drag handle */
+.drag-handle{font-size:14px;color:var(--soft);cursor:grab;padding:0 4px;line-height:1;user-select:none;}
+.drag-handle:active{cursor:grabbing;}
+.card.dragging{opacity:.4;border:1.5px dashed var(--accent);}
+/* todo list */
+.todo-item{display:flex;align-items:center;gap:7px;padding:3px 0;}
+.todo-item:hover .todo-del{opacity:1;}
+.todo-cb{width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;cursor:pointer;transition:background .15s;}
+.todo-cb.done{background:var(--accent);border-color:var(--accent);}
+.todo-text{flex:1;font-size:12px;color:var(--muted);}
+.todo-text.done{text-decoration:line-through;color:var(--soft);}
+.todo-del{opacity:0;background:none;border:none;cursor:pointer;color:var(--soft);font-size:16px;line-height:1;transition:color .15s,opacity .15s;flex-shrink:0;}
+.todo-del:hover{color:var(--red);}
+/* add widget button */
+.btn-add-widget{display:block;width:100%;margin-top:4px;background:none;border:1.5px dashed var(--border);border-radius:10px;padding:10px;font-size:11px;font-family:inherit;color:var(--muted);cursor:pointer;transition:background .15s,color .15s;text-align:center;}
+.btn-add-widget:hover{background:var(--accent-pale);color:var(--accent);border-color:var(--accent);}
+/* widget picker modal */
+.widget-picker{position:fixed;inset:0;background:rgba(30,27,24,.35);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s;}
+.widget-picker.open{opacity:1;pointer-events:all;}
+.widget-picker-inner{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;max-width:260px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.12);transform:translateY(10px);transition:transform .2s;}
+.widget-picker.open .widget-picker-inner{transform:translateY(0);}
+.wp-title{font-size:13px;font-weight:500;margin-bottom:12px;color:var(--text);}
+.wp-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.wp-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text);cursor:pointer;transition:background .15s;text-align:left;}
+.wp-item:hover{background:var(--accent-pale);color:var(--accent);}
+.wp-close{display:block;width:100%;background:none;border:none;font-size:11px;color:var(--soft);cursor:pointer;font-family:inherit;padding:4px;}
+.wp-close:hover{color:var(--muted);}
+.btn-clarify{font-size:11px;font-family:inherit;background:var(--accent-pale);color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:4px 12px;cursor:pointer;transition:background .15s;}
+.btn-clarify:hover{background:var(--accent);color:white;}
+.footer{text-align:center;font-size:9px;color:var(--soft);font-style:italic;padding-bottom:24px;letter-spacing:.03em;}
+/* pill checkboxes */
+.pill-check{display:flex;align-items:center;gap:7px;background:#ffffff;border:1px solid #c8c4bc;border-radius:6px;padding:4px 8px;font-size:11px;color:#8f8b85;transition:background .15s;cursor:pointer;}
+.pill-check.on{background:#eef0eb;border-color:#a0b090;}
+.pill-check.off{cursor:pointer;}
+.pill-check.off:hover{background:#f0ede8;}
+.pill-ck{width:13px;height:13px;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.pill-ck.on{background:#4a5c3f;}
+.pill-ck.on svg{display:block;}
+.pill-ck.off{border:1.5px solid #c8c4bc;}
+.pill-ck svg{width:7px;height:6px;display:none;pointer-events:none;}
+.pill-check strong{color:#2a2825;font-weight:500;}
+/* horizontal chips */
+.chips-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;}
+.chips-wrap .chip{background:var(--tag);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:10px;color:var(--muted);cursor:pointer;border:none;background:var(--tag);font-family:inherit;transition:background .15s,color .15s;}
+.chips-wrap .chip:hover{background:var(--accent-pale);color:var(--accent);}
+/* know section */
+.know-title{font-size:9px;color:var(--soft);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+/* weather location input */
+.wx-loc-row{display:flex;gap:5px;margin-top:10px;}
+.wx-loc-in{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:11px;font-family:inherit;color:var(--text);outline:none;}
+.wx-loc-in::placeholder{color:var(--soft);}
+.wx-loc-in:focus{border-color:var(--accent);}
+.wx-loc-btn{background:var(--accent);color:white;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:inherit;}
+.wx-loc-btn:hover{background:var(--accent-h);}
+.c1-section{padding:8px 14px;}
+.c1-divider{border-top:1px solid var(--border);margin:0 14px;}
+.know-placeholder{padding:4px 0 2px;}
+.know-hint{font-size:11px;color:var(--soft);font-style:italic;line-height:1.7;}
+.know-hint strong{color:var(--muted);font-style:normal;}
+.know-item{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--muted);padding:3px 0;line-height:1.5;}
+.know-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px;}
+.know-loading{font-size:10px;color:var(--soft);font-style:italic;padding:4px 0;}
+.col>*{animation:fadeUp .4s ease both;}
+.col>*:nth-child(1){animation-delay:.05s;}
+.col>*:nth-child(2){animation-delay:.10s;}
+.col>*:nth-child(3){animation-delay:.15s;}
+.col>*:nth-child(4){animation-delay:.20s;}
+.col>*:nth-child(5){animation-delay:.25s;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:.8}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-l">
+    <span class="logo">thoftly</span>
+  </div>
+  <div class="topbar-r">
+    <a class="btn-ghost" href="https://thoftly.ghost.io/the-why/" target="_blank" style="text-decoration:none;">the why</a>
+  </div>
+</div>
+<div class="page">
+
+<!-- COL 1 — fixed left -->
+<div id="col1">
+  <div class="card">
+
+    <!-- tagline at top of card -->
+    <div class="c1-section" style="padding-top:8px;padding-bottom:4px;">
+      <div class="cl-ey">still thoughts, start softly</div>
+    </div>
+
+    <!-- pill checkboxes -->
+    <div class="c1-section" style="padding-top:5px;padding-bottom:5px;display:flex;flex-direction:column;gap:3px;">
+      <div class="pill-check on">
+        <div class="pill-ck on"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span><strong>starting</strong> is enough</span>
+      </div>
+      <div class="pill-check on">
+        <div class="pill-ck on"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span><strong>small steps</strong> count</span>
+      </div>
+      <div class="pill-check off krow-toggle" id="want-pill" onclick="toggleWantTo(this)">
+        <div class="pill-ck off" id="want-ck" style="pointer-events:none;flex-shrink:0;"></div>
+        <span style="pointer-events:none;">i want to <strong style="color:var(--text);font-weight:500;">start something</strong></span>
+      </div>
+    </div>
+
+    <div class="c1-divider"></div>
+
+    <!-- what do you want to start -->
+    <div class="c1-section">
+      <div class="in-lbl">what do you want to start?</div>
+      <div class="begin-row">
+        <input class="begin-in" id="begin-in" placeholder="a letter, a walk, a business…" onkeydown="if(event.key==='Enter')doBegin()">
+        <button class="btn-begin" id="begin-btn" onclick="doBegin()">begin</button>
+      </div>
+      <!-- chips as horizontal wrapping pills -->
+      <div class="chips-wrap" id="chips"></div>
+    </div>
+
+    <div class="c1-divider"></div>
+
+    <!-- first things to know -->
+    <div class="c1-section" id="know-wrap" style="padding-bottom:14px;">
+      <div id="know-content">
+        <div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>
+      </div>
+    </div>
+
+    <div class="c1-divider"></div>
+
+    <!-- clock + calendar (moved down) -->
+    <div class="cl-wrap">
+      <div class="cl-time" id="clock">—</div>
+      <div class="cl-date" id="cdate">—</div>
+      <div class="cal-hdr">
+        <div class="cal-navs"><button onclick="cmon(-1)">‹</button><button onclick="cmon(1)">›</button></div>
+        <span class="cal-title" id="cal-lbl"></span>
+        <button class="cal-today" onclick="ctoday()">today</button>
+      </div>
+      <div class="cal-grid" id="cal"></div>
+    </div>
+
+    <!-- footer row -->
+    <div class="c1-divider"></div>
+    <div class="c1-section" style="padding-top:10px;padding-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="cal-foot" style="padding:0;margin:0;text-align:left;">one day at a time</div>
+      <button onclick="showHomepageHelp()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:3px 8px;font-size:9px;font-family:inherit;color:var(--muted);cursor:pointer;">make this my start page</button>
+    </div>
+
+
+  </div>
+  <div id="saved-col1"></div>
+</div>
+
+<!-- SCROLLABLE WORKSPACE TRACK -->
+<div class="workspace-track-wrap" id="workspace-wrap">
+  <div class="workspace-actions">
+    <button class="btn-ghost" onclick="openExistingLogin()">log in</button>
+    <button class="btn-ghost" id="logout-btn" type="button" onclick="return logoutUser(event)">log out</button>
+    <button class="btn-add-col" id="add-col-btn" onclick="handleAddCol()">
+      <span class="plus">+</span> <span id="add-col-label">a 2nd start</span>
+    </button>
+  </div>
+  <div class="workspace-scroll">
+    <div class="workspace-track" id="workspace-track">
+
+      <!-- First workspace col (always free) -->
+      <div class="workspace-col" id="ws-col-1">
+        <div class="ws-empty" id="ws-empty">
+          <div style="font-size:22px;margin-bottom:12px;opacity:.4">✦</div>
+          Your checklist to begin<br>will appear here
+          <div style="margin-top:10px;font-size:10px;opacity:.5">type what you want to start<br>and press <strong>begin</strong></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- COL 3 — fixed right -->
+<div id="col3">
+  <div class="card" id="w-me" draggable="true" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dragDrop(event)">
+    <div class="card-hd">
+      <div><div class="card-lbl">me</div><div class="card-sub">a gentle reminder</div></div>
+      <div class="wctrl"><span class="drag-handle" title="drag to reorder">⠿</span><button class="wbtn" onclick="toggleMin('w-me',this)" title="minimize">−</button></div>
+    </div>
+    <div class="card-bd">
+      <div class="me-row">
+        <div class="me-av" id="me-av" aria-label="thoftly">
+          <img src="/Logo.jpg" alt="thoftly" />
+        </div>
+        <div class="me-nm" id="me-nm" contenteditable="true" data-placeholder="tap to add your name" onblur="updateAv()" onfocus="clearMePlaceholder(this)" oninput="updateAv()"></div>
+      </div>
+      <div class="wlbl">your main focus</div>
+      <textarea class="me-ta" rows="2" placeholder="your main goal, project, or what you're working toward right now…" oninput="autoGrow(this)"></textarea>
+    </div>
+  </div>
+
+  <!-- TO-DO LIST (replaces one thing today) -->
+  <div class="card" id="w-todo" draggable="true" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dragDrop(event)">
+    <div class="card-hd">
+      <div><div class="card-lbl">to do</div><div class="card-sub">your list</div></div>
+      <div class="wctrl">
+        <div class="drag-handle" title="drag to reorder">⠿</div>
+        <button class="wbtn" onclick="toggleMin('w-todo',this)" title="minimize">−</button>
+      </div>
+    </div>
+    <div class="card-bd">
+      <div id="todo-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:5px;">
+        <input class="b-in" id="todo-input" placeholder="add a task…" onkeydown="if(event.key==='Enter')addTodo()" style="flex:1;">
+        <button class="btn-add-sm" onclick="addTodo()">add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="w-wx" draggable="true" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dragDrop(event)">
+    <div class="card-hd">
+      <div><div class="card-lbl">weather</div><div class="card-sub" id="wx-loc">your area</div></div>
+      <div class="wctrl"><span class="drag-handle" title="drag to reorder">⠿</span><button class="wbtn" onclick="toggleMin('w-wx',this)" title="minimize">−</button></div>
+    </div>
+    <div class="card-bd">
+      <div class="wx-top">
+        <div><div class="wx-temp" id="wx-temp">—°</div><div class="wx-desc" id="wx-desc">loading…</div></div>
+        <div class="wx-icon" id="wx-icon">⛅</div>
+      </div>
+      <div class="wx-fc" id="wx-fc"></div>
+      <div class="wx-loc-row">
+        <input class="wx-loc-in" id="wx-loc-in" placeholder="city or zip code…" onkeydown="if(event.key==='Enter')searchWxLocation()">
+        <button class="wx-loc-btn" onclick="searchWxLocation()">→</button>
+      </div>
+      <div id="wx-loc-err" style="font-size:9px;color:var(--red);margin-top:4px;min-height:12px;"></div>
+    </div>
+  </div>
+
+  <div class="card" id="w-bills" draggable="true" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dragDrop(event)">
+    <div class="card-hd">
+      <div><div class="card-lbl">bill tracker</div><div class="card-sub">what's left after what's due</div></div>
+      <div class="wctrl"><span class="drag-handle" title="drag to reorder">⠿</span><button class="wbtn" onclick="toggleMin('w-bills',this)" title="minimize">−</button></div>
+    </div>
+    <div class="card-bd">
+      <!-- editable balance -->
+      <div class="b-bal-row">
+        <span class="b-bal-l">balance $</span>
+        <input class="b-bal-input" id="b-bal-input" type="number" value="1240" min="0" oninput="updateBillAfter()" onblur="updateBillAfter()">
+      </div>
+      <div class="b-list" id="b-list"></div>
+      <div class="b-add">
+        <input class="b-in" id="b-name" placeholder="bill name" onkeydown="if(event.key==='Enter')addBill()">
+        <span style="font-size:10px;color:var(--soft)">$</span>
+        <input class="b-in b-in-sm" id="b-amt" placeholder="0.00" type="number" min="0" onkeydown="if(event.key==='Enter')addBill()">
+        <button class="btn-add-sm" onclick="addBill()">add</button>
+      </div>
+      <div class="b-after"><span>amount remaining</span><span class="b-after-n" id="b-after">$230.00</span></div>
+    </div>
+  </div>
+
+  <!-- ADD WIDGET BUTTON -->
+  <button class="btn-add-widget" onclick="addWidget()">+ add widget</button>
+
+</div><!-- end col3 -->
+
+<!-- COL 4 — Places sidebar (slim, static) -->
+<div id="col4">
+  <div class="card" id="w-places">
+    <div class="card-hd">
+      <div><div class="card-lbl">places</div><div class="card-sub">your shortcuts</div></div>
+      <div class="wctrl"><button class="wbtn" onclick="toggleMin('w-places',this)" title="minimize">−</button></div>
+    </div>
+    <div class="card-bd">
+      <div class="pl-list" id="pl-list"></div>
+      <div class="pl-add pl-add-stack">
+        <input class="pl-in" id="pl-name" placeholder="name">
+        <input class="pl-in pl-in-url" id="pl-url" placeholder="url">
+        <button class="btn-add-sm" onclick="addPlace()">add</button>
+      </div>
+    </div>
+  </div>
+</div><!-- end col4 -->
+</div><!-- end page -->
+<div class="footer">one day at a time</div>
+
+<!-- HOMEPAGE HELP MODAL -->
+<div class="overlay" id="homepage-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="m-ey">make thoftly your start page</div>
+    <div class="m-ttl" style="font-size:16px;" id="hp-modal-title">set as your start page</div>
+    <div class="m-body" style="margin-bottom:16px;" id="hp-modal-body">
+      <!-- filled in by showHomepageHelp() based on detected browser/device -->
+    </div>
+    <button class="btn-up" onclick="closeHomepageHelp()" style="margin-bottom:0;">got it</button>
+  </div>
+</div>
+
+<!-- GHOST LOGIN MODAL -->
+<div class="overlay" id="login-modal">
+  <div class="modal">
+    <div class="m-ey">thoftly · still thoughts, start softly</div>
+    <div class="m-ttl" id="login-modal-title">save your starts</div>
+    <div class="m-body" id="login-modal-body">
+      enter your email to save your widgets and first start for free.
+    </div>
+    <!-- already logged in state -->
+    <div id="login-already-in" style="display:none;padding:10px 0 12px;">
+      <div style="font-size:12px;color:var(--accent);margin-bottom:12px;" id="login-already-msg"></div>
+      <button class="btn-up" onclick="logoutUser(null)" style="margin-bottom:8px;background:var(--red);">log out</button>
+    </div>
+    <!-- email entry state -->
+    <div id="login-email-area" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <input id="login-email" type="email" placeholder="your@email.com"
+        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--text);outline:none;"
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')submitLogin()">
+      <button class="btn-up" id="login-submit-btn" onclick="submitLogin()" style="margin-bottom:0;">subscribe free — send magic link →</button>
+    </div>
+    <div id="login-msg" style="font-size:11px;color:var(--accent);text-align:center;min-height:16px;font-style:italic;"></div>
+    <button class="btn-skip" onclick="closeLogin()">not now</button>
+  </div>
+</div>
+<form id="ghost-members-form" data-members-form="signup" data-members-autoredirect="false" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;">
+  <input id="ghost-members-email" data-members-email type="email" required>
+  <p data-members-error></p>
+</form>
+<a id="ghost-signout" href="javascript:" data-members-signout style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;">Sign out</a>
+
+<!-- WIDGET PICKER MODAL -->
+<div class="widget-picker" id="widget-picker">
+  <div class="widget-picker-inner">
+    <div class="wp-title">add a widget</div>
+    <div class="wp-list">
+      <button class="wp-item" onclick="addWidgetType('notes')">📝 notes</button>
+      <button class="wp-item" onclick="addWidgetType('todo')">✅ another to-do list</button>
+      <button class="wp-item" onclick="addWidgetType('countdown')">⏳ countdown</button>
+      <button class="wp-item" onclick="addWidgetType('links')">🔗 another links list</button>
+      <button class="wp-item" onclick="addWidgetType('reminder')">💬 reminder / affirmation</button>
+    </div>
+    <button class="wp-close" onclick="closeWidgetPicker()">cancel</button>
+  </div>
+</div>
+
+<!-- CLARIFY MODAL -->
+<div class="overlay" id="clarify-modal">
+  <div class="modal">
+    <div class="m-ey">let's get more specific</div>
+    <div class="m-ttl" style="font-size:15px;">tell me more</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">what type? (e.g. bakery, app, consulting)</div>
+        <input id="cl-type" class="begin-in" style="width:100%;" placeholder="type of business or project…">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">what state are you in?</div>
+        <input id="cl-state" class="begin-in" style="width:100%;" placeholder="e.g. California, Texas…">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">what's your rough budget? (optional)</div>
+        <input id="cl-budget" class="begin-in" style="width:100%;" placeholder="e.g. under $500, $1k-5k…">
+      </div>
+    </div>
+    <button class="btn-up" onclick="submitClarify()">generate specific checklist →</button>
+    <button class="btn-skip" onclick="closeClarify()">not now</button>
+  </div>
+</div>
+
+<!-- REPLACE LIST MODAL -->
+<div class="overlay" id="replace-list-modal">
+  <div class="modal">
+    <div class="m-ey">start something new</div>
+    <div class="m-ttl" style="font-size:16px;">replace this list?</div>
+    <div class="m-body">generating a new list here will replace your current one. add a 2nd start if you want to keep both.</div>
+    <button class="btn-up" onclick="confirmReplaceList()" style="margin-bottom:8px;">replace current list</button>
+    <button class="btn-up" onclick="addSecondFromReplace()" style="background:var(--accent-pale);color:var(--accent);border:1px solid var(--accent);margin-bottom:8px;">add a 2nd start</button>
+    <button class="btn-skip" onclick="closeReplaceList()">cancel</button>
+  </div>
+</div>
+
+<!-- PAYWALL -->
+<div class="overlay" id="paywall">
+  <div class="modal">
+    <div class="m-ey">thoftly · still thoughts, start softly</div>
+    <div class="m-ttl">add a 2nd start</div>
+    <div class="m-body">a 2nd start requires a paid Ghost subscription.</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:10px;font-weight:600;">2nd start</div>
+    <div class="m-pricing" style="margin-bottom:10px;">
+      <div class="pc sel" id="pc-mo" onclick="selPlan('mo')">
+        <div class="pc-amt">$3</div><div class="pc-per">per month</div><div class="pc-note">2 lists</div>
+      </div>
+      <div class="pc" id="pc-yr" onclick="selPlan('yr')">
+        <div class="pc-amt">$25</div><div class="pc-per">per year</div><div class="pc-note">2 lists · save $11</div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:10px;font-weight:600;">unlimited starts</div>
+    <div class="m-pricing" style="margin-bottom:12px;">
+      <div class="pc" onclick="selPlan('unlmo')">
+        <div class="pc-amt">$5</div><div class="pc-per">per month</div><div class="pc-note">unlimited lists</div>
+      </div>
+      <div class="pc" onclick="selPlan('unlyr')">
+        <div class="pc-amt">$39</div><div class="pc-per">per year</div><div class="pc-note">unlimited · save $21</div>
+      </div>
+    </div>
+    <button class="btn-up" onclick="openPaidGhostPortal(event);closePaywall();">upgrade to add more starts</button>
+    <button class="btn-skip" onclick="closePaywall()">no thanks, i'll start over</button>
+  </div>
+</div>
+
+<script defer src="https://unpkg.com/@tryghost/portal@latest/umd/portal.min.js" data-ghost="https://thoftly.ghost.io"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://vnsqorbrcxiesewbhzsb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuc3FvcmJyY3hpZXNld2JoenNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzM3NzAsImV4cCI6MjA5MzQwOTc3MH0.0APBc__Fi3wt4HSj2EbDtrEjmOvCSSiK7Z04c9J9kh4';
+let supabaseClient = null;
+let currentUserEmail = localStorage.getItem('thoftly_email') || '';
+window.thoftlyIsPaid = (function(){ try { return localStorage.getItem('thoftly_is_paid') === '1'; } catch(e){ return false; } })();
+let pendingSecondList = false;
+let liveSaveTimer = null;
+let liveSaveInFlight = false;
+let applyingRemoteListUpdate = false;
+let applyingRemoteWidgetUpdate = false;
+let loginMode = 'save';
+
+function getSupabase(){
+  if(!window.supabase || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) return null;
+  if(!supabaseClient) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return supabaseClient;
+}
+
+function collectWidgetData(){
+  const customWidgets=Array.from(document.querySelectorAll('#col3 .card[id^="w-custom-"]')).map(card=>({
+    id:card.id,
+    label:card.querySelector('.card-lbl')?card.querySelector('.card-lbl').textContent:'',
+    minimized:card.classList.contains('min'),
+    fields:Array.from(card.querySelectorAll('input,textarea,[contenteditable="true"]')).map(el=>({
+      id:el.id||'',
+      type:el.tagName.toLowerCase(),
+      value:el.value!==undefined?el.value:el.textContent
+    }))
+  }));
+  return {
+    savedAt:new Date().toISOString(),
+    cardOrder:Array.from(document.querySelectorAll('#col3 .card')).map(card=>card.id),
+    bills:bills,
+    places:places,
+    todos:todos,
+    meText:document.querySelector('#w-me .me-ta')?document.querySelector('#w-me .me-ta').value:'',
+    meName:document.getElementById('me-nm')?document.getElementById('me-nm').textContent:'',
+    balance:document.getElementById('b-bal-input')?document.getElementById('b-bal-input').value:'',
+    weather:{
+      location:document.getElementById('wx-loc')?document.getElementById('wx-loc').textContent:'',
+      temp:document.getElementById('wx-temp')?document.getElementById('wx-temp').textContent:'',
+      desc:document.getElementById('wx-desc')?document.getElementById('wx-desc').textContent:'',
+      icon:document.getElementById('wx-icon')?document.getElementById('wx-icon').textContent:'',
+      forecastHtml:document.getElementById('wx-fc')?document.getElementById('wx-fc').innerHTML:'',
+      searchInput:document.getElementById('wx-loc-in')?document.getElementById('wx-loc-in').value:''
+    },
+    billDraft:{
+      name:document.getElementById('b-name')?document.getElementById('b-name').value:'',
+      amount:document.getElementById('b-amt')?document.getElementById('b-amt').value:''
+    },
+    todoDraft:document.getElementById('todo-input')?document.getElementById('todo-input').value:'',
+    placeDraft:{
+      name:document.getElementById('pl-name')?document.getElementById('pl-name').value:'',
+      url:document.getElementById('pl-url')?document.getElementById('pl-url').value:''
+    },
+    customWidgets:customWidgets
+  };
+}
+
+function collectGeneratedList(){
+  const card=getCol2().querySelector('.cl-card:not(#cl-ld)');
+  if(!card || card.querySelector('#submit-cq-btn')) return null;
+  return {
+    prompt:window._displayPrompt || window._currentPrompt || '',
+    enhancedPrompt:window._currentPrompt || '',
+    title:card.querySelector('.cl-title')?card.querySelector('.cl-title').textContent:'',
+    tagline:card.querySelector('.cl-tagline')?card.querySelector('.cl-tagline').textContent:'',
+    facts:Array.from(card.querySelectorAll('.list-fact span')).map(el=>el.textContent),
+    sections:Array.from(card.querySelectorAll('.cl-sec')).map(sec=>({
+      name:sec.querySelector('.sec-nm')?sec.querySelector('.sec-nm').textContent:'',
+      done:sec.querySelector('.sec-ck')?sec.querySelector('.sec-ck').classList.contains('done'):false,
+      items:Array.from(sec.querySelectorAll('.cl-item')).map(item=>({
+        text:item.querySelector('.i-txt')?item.querySelector('.i-txt').textContent:'',
+        done:item.querySelector('.i-ck')?item.querySelector('.i-ck').classList.contains('done'):false
+      }))
+    }))
+  };
+}
+
+// Collect generated lists from EVERY workspace column (not just col 1)
+function collectAllGeneratedLists(){
+  const cols = document.querySelectorAll('.workspace-col');
+  const out = [];
+  cols.forEach((col, idx) => {
+    const card = col.querySelector('.cl-card:not(#cl-ld)');
+    if (!card || card.querySelector('#submit-cq-btn')) return;
+    const list = {
+      list_number: idx + 1,
+      prompt: '',
+      enhancedPrompt: '',
+      title: card.querySelector('.cl-title') ? card.querySelector('.cl-title').textContent : '',
+      tagline: card.querySelector('.cl-tagline') ? card.querySelector('.cl-tagline').textContent : '',
+      facts: Array.from(card.querySelectorAll('.list-fact span')).map(el => el.textContent),
+      sections: Array.from(card.querySelectorAll('.cl-sec')).map(sec => ({
+        name: sec.querySelector('.sec-nm') ? sec.querySelector('.sec-nm').textContent : '',
+        done: sec.querySelector('.sec-ck') ? sec.querySelector('.sec-ck').classList.contains('done') : false,
+        items: Array.from(sec.querySelectorAll('.cl-item')).map(item => ({
+          text: item.querySelector('.i-txt') ? item.querySelector('.i-txt').textContent : '',
+          done: item.querySelector('.i-ck') ? item.querySelector('.i-ck').classList.contains('done') : false
+        }))
+      }))
+    };
+    // For col 1, use the global prompt vars (preserved between sessions)
+    if (idx === 0) {
+      list.prompt = window._displayPrompt || window._currentPrompt || '';
+      list.enhancedPrompt = window._currentPrompt || '';
+    }
+    if (list.title || list.sections.length) out.push(list);
+  });
+  return out;
+}
+
+function listSnapshot(value){
+  try{return JSON.stringify(value||null);}
+  catch(e){return '';}
+}
+
+function restoreGeneratedList(saved){
+  if(!saved || !saved.sections || !saved.sections.length) return;
+  window._displayPrompt=saved.prompt||'';
+  window._currentPrompt=saved.enhancedPrompt||saved.prompt||'';
+  if(saved.facts&&saved.facts.length) renderKnow(saved.facts);
+  const data={
+    title:saved.title||'saved start',
+    tagline:saved.tagline||'saved',
+    facts:saved.facts||[],
+    sections:saved.sections.map(sec=>({
+      name:sec.name||'steps',
+      items:(sec.items||[]).map(item=>typeof item==='string'?item:item.text)
+    }))
+  };
+  renderChecklist(data,true);
+  const card=getCol2().querySelector('.cl-card');
+  if(!card) return;
+  saved.sections.forEach((sec,secIndex)=>{
+    const secEl=card.querySelectorAll('.cl-sec')[secIndex];
+    if(!secEl) return;
+    const secCheck=secEl.querySelector('.sec-ck');
+    if(sec.done&&secCheck) secCheck.classList.add('done');
+    (sec.items||[]).forEach((item,itemIndex)=>{
+      if(typeof item==='string') return;
+      const row=secEl.querySelectorAll('.cl-item')[itemIndex];
+      if(!row) return;
+      const ck=row.querySelector('.i-ck');
+      const txt=row.querySelector('.i-txt');
+      if(item.done&&ck) ck.classList.add('done');
+      if(item.done&&txt) txt.classList.add('done-t');
+    });
+  });
+}
+
+async function saveFirstListToSupabase(email,opts){
+  opts=opts||{};
+  const db=getSupabase();
+  if(!db) throw new Error('Add your Supabase URL and anon key in index.html first.');
+  const cleanEmail=email.trim().toLowerCase();
+  const widgetData=collectWidgetData();
+  const allLists = collectAllGeneratedLists();
+
+  // Upsert user (don't touch is_paid — Ghost is the source of truth for that)
+  // We use a separate upsert that doesn't include is_paid so we don't overwrite it
+  const userExists = await db.from('users').select('id').eq('email', cleanEmail).maybeSingle();
+  if (userExists.error && userExists.error.code !== 'PGRST116') throw userExists.error;
+  if (!userExists.data) {
+    const userRes = await db.from('users').insert({ email: cleanEmail, is_paid: false });
+    if (userRes.error) throw userRes.error;
+  }
+
+  // Save widget data + each list. Always at least one row (for widget_data persistence
+  // even when no list is generated yet).
+  if (allLists.length === 0) {
+    // No generated lists — save just widget data on row 1
+    const listRes = await db.from('saved_lists').upsert({
+      user_email: cleanEmail,
+      widget_data: widgetData,
+      generated_list: { prompt:'', title:'', tagline:'', facts:[], sections:[] },
+      list_number: 1
+    }, { onConflict: 'user_email,list_number' });
+    if (listRes.error) throw listRes.error;
+  } else {
+    // Save each list as its own row, with widget_data only on row 1
+    for (const list of allLists) {
+      const row = {
+        user_email: cleanEmail,
+        generated_list: list,
+        list_number: list.list_number,
+        widget_data: list.list_number === 1 ? widgetData : {}
+      };
+      const r = await db.from('saved_lists').upsert(row, { onConflict: 'user_email,list_number' });
+      if (r.error) throw r.error;
+    }
+    // Clean up any list rows beyond what's currently displayed
+    // (e.g. if user had 3 lists but deleted one, remove the orphan)
+    const maxListNumber = Math.max(...allLists.map(l => l.list_number));
+    const cleanupRes = await db.from('saved_lists')
+      .delete()
+      .eq('user_email', cleanEmail)
+      .gt('list_number', maxListNumber);
+    // Don't throw on cleanup error — not critical
+    if (cleanupRes.error) console.warn('Cleanup orphan lists failed:', cleanupRes.error);
+  }
+
+  currentUserEmail=cleanEmail;
+  localStorage.setItem('thoftly_email', cleanEmail);
+  if(!opts.skipLocal) saveToLocal();
+  return true;
+}
+
+async function loadSavedStartFromSupabase(email){
+  const db=getSupabase();
+  if(!db) throw new Error('could not connect to saved starts');
+  const cleanEmail=email.trim().toLowerCase();
+  // Load ALL saved lists for this user, ordered by list_number
+  const listRes=await db.from('saved_lists')
+    .select('widget_data,generated_list,list_number')
+    .eq('user_email',cleanEmail)
+    .order('list_number',{ascending:true});
+  if(listRes.error) throw listRes.error;
+  if(!listRes.data || listRes.data.length === 0) throw new Error('no saved start found for that email');
+
+  // Find list 1 (which holds widget_data) and any additional lists
+  const list1Row = listRes.data.find(r => r.list_number === 1) || listRes.data[0];
+  const widgetData = list1Row.widget_data || {};
+  const list1Generated = list1Row.generated_list || null;
+  const additionalLists = listRes.data.filter(r => r.list_number > 1);
+
+  const localData={
+    bills:widgetData.bills||[],
+    places:widgetData.places||[],
+    todos:widgetData.todos||[],
+    meText:widgetData.meText||'',
+    meName:widgetData.meName||'',
+    balInput:widgetData.balance||'',
+    wxLoc:widgetData.weather?widgetData.weather.location:'',
+    wxTemp:widgetData.weather?widgetData.weather.temp:'',
+    wxDesc:widgetData.weather?widgetData.weather.desc:'',
+    wxIcon:widgetData.weather?widgetData.weather.icon:'',
+    wxForecast:widgetData.weather?widgetData.weather.forecastHtml:'',
+    generatedList:list1Generated,
+    widgetData:widgetData
+  };
+  currentUserEmail=cleanEmail;
+  localStorage.setItem('thoftly_email',cleanEmail);
+  localStorage.setItem('thoftly_data',JSON.stringify(localData));
+  if(list1Generated&&list1Generated.sections&&list1Generated.sections.length){
+    localStorage.setItem('thoftly_main_list_exists','1');
+  }
+  applyStoredData(localData);
+
+  // Restore additional lists by creating workspace columns and rendering each
+  if (additionalLists.length > 0) {
+    // Brief delay to let col1 finish rendering first
+    setTimeout(() => {
+      additionalLists.forEach(row => {
+        const list = row.generated_list;
+        if (!list || !list.sections || !list.sections.length) return;
+        // Create a new workspace column
+        if (typeof addWorkspaceCol === 'function') {
+          addWorkspaceCol(true);
+          // Render the list into the newest column
+          const cols = document.querySelectorAll('.workspace-col');
+          const newCol = cols[cols.length - 1];
+          if (newCol && typeof renderChecklistInto === 'function') {
+            const data = {
+              title: list.title || 'saved start',
+              tagline: list.tagline || 'saved',
+              facts: list.facts || [],
+              sections: (list.sections || []).map(sec => ({
+                name: sec.name || 'steps',
+                items: (sec.items || []).map(item => typeof item === 'string' ? item : item.text)
+              }))
+            };
+            // Clear empty placeholder if present
+            const empty = newCol.querySelector('.ws-empty');
+            if (empty) empty.remove();
+            renderChecklistInto(data, newCol, true, newCol.id);
+            // Restore done states
+            list.sections.forEach((sec, secIndex) => {
+              const secEl = newCol.querySelectorAll('.cl-sec')[secIndex];
+              if (!secEl) return;
+              const secCheck = secEl.querySelector('.sec-ck');
+              if (sec.done && secCheck) secCheck.classList.add('done');
+              (sec.items || []).forEach((item, itemIndex) => {
+                if (typeof item === 'string') return;
+                const itemRow = secEl.querySelectorAll('.cl-item')[itemIndex];
+                if (!itemRow) return;
+                const ck = itemRow.querySelector('.i-ck');
+                const txt = itemRow.querySelector('.i-txt');
+                if (item.done && ck) ck.classList.add('done');
+                if (item.done && txt) txt.classList.add('done-t');
+              });
+            });
+          }
+        }
+      });
+    }, 200);
+  }
+  return true;
+}
+
+function scheduleLiveSave(){
+  if(applyingRemoteWidgetUpdate) return;
+  if(!currentUserEmail) return;
+  clearTimeout(liveSaveTimer);
+  liveSaveTimer=setTimeout(async ()=>{
+    if(liveSaveInFlight) return scheduleLiveSave();
+    liveSaveInFlight=true;
+    try{
+      await saveFirstListToSupabase(currentUserEmail,{skipLocal:true});
+    }catch(e){
+      console.warn('live save failed', e);
+    }finally{
+      liveSaveInFlight=false;
+    }
+  },1200);
+}
+
+async function canCreateSecondList(){
+  if(!currentUserEmail) return {allowed:false, needsEmail:true};
+  // Ghost is the source of truth for payment status (set via postMessage from parent)
+  let isPaid = false;
+  if (typeof window.thoftlyIsPaid === 'boolean') {
+    isPaid = window.thoftlyIsPaid;
+  } else {
+    try { isPaid = localStorage.getItem('thoftly_is_paid') === '1'; } catch(e){}
+  }
+  const db=getSupabase();
+  if(!db) return {allowed:false, error:'Add your Supabase URL and anon key in index.html first.'};
+  const email=currentUserEmail.trim().toLowerCase();
+  // Fallback: if we don't have isPaid info from Ghost (e.g. direct visit to app subdomain),
+  // check Supabase users table as a backup
+  if (!isPaid) {
+    const userRes=await db.from('users').select('is_paid').eq('email',email).maybeSingle();
+    if(!userRes.error && userRes.data && userRes.data.is_paid) isPaid = true;
+  }
+  const countRes=await db.from('saved_lists').select('id',{count:'exact',head:true}).eq('user_email',email);
+  if(countRes.error) return {allowed:false, error:countRes.error.message};
+  const count=countRes.count || 0;
+  return {allowed:isPaid || count<1, isPaid:isPaid, count:count};
+}
+
+// SET --vh for mobile browsers (fixes 100vh issues)
+function setVH(){document.documentElement.style.setProperty('--vh',(window.innerHeight*0.01)+'px');}
+setVH();
+window.addEventListener('resize',setVH);
+
+// CLOCK
+function tick(){
+  const clockEl=document.getElementById('clock');
+  const dateEl=document.getElementById('cdate');
+  if(!clockEl||!dateEl)return;
+  const n=new Date(),h=n.getHours(),m=n.getMinutes(),ap=h>=12?'PM':'AM',h12=h%12||12;
+  clockEl.textContent=`${h12}:${String(m).padStart(2,'0')} ${ap}`;
+  const ds=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const ms=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  dateEl.textContent=`${ds[n.getDay()]}, ${ms[n.getMonth()]} ${n.getDate()}, ${n.getFullYear()}`;
+}
+tick();
+setInterval(tick,1000);
+// CALENDAR
+const TD=new Date();let cy=TD.getFullYear(),cm=TD.getMonth();
+function renderCal(){const ms=['January','February','March','April','May','June','July','August','September','October','November','December'];document.getElementById('cal-lbl').textContent=`${ms[cm]} ${cy}`;const g=document.getElementById('cal');g.innerHTML='';['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d=>{const e=document.createElement('div');e.className='cal-dn';e.textContent=d;g.appendChild(e);});const first=new Date(cy,cm,1).getDay(),dim=new Date(cy,cm+1,0).getDate(),prev=new Date(cy,cm,0).getDate();for(let i=first-1;i>=0;i--){const e=document.createElement('div');e.className='cal-d dim';e.textContent=prev-i;g.appendChild(e);}for(let d=1;d<=dim;d++){const e=document.createElement('div');e.className='cal-d';if(d===TD.getDate()&&cm===TD.getMonth()&&cy===TD.getFullYear())e.classList.add('td');e.textContent=d;g.appendChild(e);}const tot=first+dim,rem=tot%7===0?0:7-tot%7;for(let d=1;d<=rem;d++){const e=document.createElement('div');e.className='cal-d dim';e.textContent=d;g.appendChild(e);}}
+function cmon(d){cm+=d;if(cm<0){cm=11;cy--;}else if(cm>11){cm=0;cy++;}renderCal();}
+function ctoday(){cy=TD.getFullYear();cm=TD.getMonth();renderCal();}
+renderCal();
+// WIDGET MINIMIZE
+function toggleMin(id,btn){const el=document.getElementById(id);el.classList.toggle('min');btn.textContent=el.classList.contains('min')?'+':'−';}
+// ME
+function updateAv(){ /* avatar is now a fixed brain logo SVG, no longer derived from name */ }
+function clearMePlaceholder(el){
+  // contenteditable doesn't support placeholder natively; we use CSS for the visual hint, this is a no-op stub for symmetry
+  // (kept in case we need focus-time behavior later)
+}
+// Auto-grow textarea to fit content
+function autoGrow(el){
+  if(!el) return;
+  el.style.height='auto';
+  el.style.height=(el.scrollHeight)+'px';
+}
+// Initialize auto-grow for any pre-filled textareas on load
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('textarea.me-ta').forEach(ta=>{
+    if(ta.value) autoGrow(ta);
+  });
+});
+
+// ===== POSTMESSAGE LOGIN BRIDGE =====
+// The parent page (www.thoftly.com Ghost site) sends us the logged-in member's email
+// via postMessage. We listen for it and load their data from Supabase.
+const TRUSTED_PARENT_ORIGINS = [
+  'https://www.thoftly.com',
+  'https://thoftly.com',
+  'https://thoftly.ghost.io'
+];
+
+window.addEventListener('message', async (event) => {
+  if (!TRUSTED_PARENT_ORIGINS.includes(event.origin)) return;
+  const data = event.data || {};
+  if (data.type === 'thoftly-login' && data.email) {
+    const email = String(data.email).trim().toLowerCase();
+    if (!email.includes('@')) return;
+    // Always update the paid status from Ghost (source of truth for payments)
+    const isPaid = !!data.isPaid;
+    try { localStorage.setItem('thoftly_is_paid', isPaid ? '1' : '0'); } catch(e){}
+    window.thoftlyIsPaid = isPaid;
+    // Skip data reload if already logged in as this user
+    const localEmail = (localStorage.getItem('thoftly_email')||'').trim().toLowerCase();
+    if (email === localEmail && currentUserEmail === email) {
+      refreshAuthUI();
+      return;
+    }
+    try {
+      await loadSavedStartFromSupabase(email);
+      console.log('[thoftly] Loaded data for', email, '— paid:', isPaid);
+    } catch(e) {
+      // No saved data yet — just record the email so future saves work
+      currentUserEmail = email;
+      localStorage.setItem('thoftly_email', email);
+      console.log('[thoftly] Logged in as', email, '(no saved data yet) — paid:', isPaid);
+    }
+    refreshAuthUI();
+  } else if (data.type === 'thoftly-logout') {
+    // Parent told us to log out. Only act if we were actually logged in.
+    if (currentUserEmail || localStorage.getItem('thoftly_email')) {
+      doLocalLogout();
+      refreshAuthUI();
+    }
+  }
+});
+
+// On page load, ask the parent (if we're iframed) for current login state
+window.addEventListener('load', () => {
+  if (window.parent && window.parent !== window) {
+    try {
+      window.parent.postMessage({ type: 'thoftly-who-am-i' }, '*');
+    } catch(e) {}
+  }
+  refreshAuthUI();
+});
+
+function refreshAuthUI(){
+  const loginBtn = document.querySelector('button[onclick="openExistingLogin()"]');
+  const logoutBtn = document.getElementById('logout-btn');
+  if (currentUserEmail) {
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = '';
+  } else {
+    if (loginBtn) loginBtn.style.display = '';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
+  refreshLoggedOutBanner();
+}
+
+// Show a soft banner when cached data is visible but user isn't logged in
+function refreshLoggedOutBanner(){
+  let banner = document.getElementById('logged-out-banner');
+  // Has cached data?
+  let hasCached = false;
+  try {
+    const raw = localStorage.getItem('thoftly_data');
+    if (raw) {
+      const d = JSON.parse(raw);
+      hasCached = !!(
+        (d.todos && d.todos.length) ||
+        (d.bills && d.bills.length) ||
+        (d.places && d.places.length) ||
+        (d.meText && d.meText.trim()) ||
+        (d.meName && d.meName.trim()) ||
+        (d.generatedList && d.generatedList.title)
+      );
+    }
+  } catch(e){}
+
+  const dismissed = (function(){ try { return sessionStorage.getItem('thoftly_banner_dismissed') === '1'; } catch(e){ return false; } })();
+  const shouldShow = !currentUserEmail && hasCached && !dismissed;
+
+  if (shouldShow) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'logged-out-banner';
+      banner.style.cssText = 'background:var(--accent-pale);border-bottom:1px solid var(--border);padding:7px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--accent);';
+      banner.innerHTML = `
+        <span style="font-style:italic;">your data is showing from this device — <strong>log in to keep it across devices</strong></span>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button onclick="openExistingLogin()" style="background:var(--accent);color:white;border:none;border-radius:14px;padding:4px 10px;font-size:10px;font-family:inherit;cursor:pointer;white-space:nowrap;">log in</button>
+          <button onclick="dismissLoggedOutBanner()" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0 4px;line-height:1;" title="dismiss">×</button>
+        </div>
+      `;
+      const page = document.querySelector('.page');
+      if (page && page.parentNode) {
+        page.parentNode.insertBefore(banner, page);
+      }
+    }
+    banner.style.display = '';
+  } else if (banner) {
+    banner.style.display = 'none';
+  }
+}
+
+function dismissLoggedOutBanner(){
+  const banner = document.getElementById('logged-out-banner');
+  if (banner) banner.style.display = 'none';
+  // Remember dismissal for this session only (re-show on next page load)
+  try { sessionStorage.setItem('thoftly_banner_dismissed', '1'); } catch(e){}
+}
+
+function doLocalLogout(){
+  currentUserEmail = '';
+  window.thoftlyIsPaid = false;
+  localStorage.removeItem('thoftly_email');
+  localStorage.removeItem('thoftly_is_paid');
+  localStorage.removeItem('thoftly_data');
+  localStorage.removeItem('thoftly_main_list_exists');
+  // Reload to fresh state
+  setTimeout(() => location.reload(), 100);
+}
+// WEATHER
+async function loadWxCoords(lat,lon,label){
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto&forecast_days=6`);
+    const d=await r.json();const c=d.current_weather;
+    document.getElementById('wx-temp').textContent=Math.round(c.temperature)+'°';
+    const dc=wcode(c.weathercode);
+    document.getElementById('wx-desc').textContent=dc.label;
+    document.getElementById('wx-icon').textContent=dc.icon;
+    if(label)document.getElementById('wx-loc').textContent=label.toLowerCase();
+    const days=['sun','mon','tue','wed','thu','fri','sat'];
+    const fc=document.getElementById('wx-fc');fc.innerHTML='';
+    for(let i=1;i<=4;i++){const dt=new Date(d.daily.time[i]);const wd=wcode(d.daily.weathercode[i]);fc.innerHTML+=`<div class="wx-row"><span class="wx-day">${days[dt.getDay()]}</span><span class="wx-fi">${wd.icon}</span><span class="wx-hi">${Math.round(d.daily.temperature_2m_max[i])}°</span><span class="wx-lo">${Math.round(d.daily.temperature_2m_min[i])}°</span></div>`;}
+  }catch(e){document.getElementById('wx-desc').textContent='unable to load';}
+}
+async function loadWx(){
+  document.getElementById('wx-desc').textContent='locating…';
+  navigator.geolocation.getCurrentPosition(async p=>{
+    const{latitude:lat,longitude:lon}=p.coords;
+    let label='your area';
+    try{const gr=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);const gd=await gr.json();const city=gd.address.city||gd.address.town||gd.address.village||'';const st=gd.address.state_code||'';if(city)label=city+(st?', '+st:'');}catch(e){}
+    loadWxCoords(lat,lon,label);
+  },()=>{document.getElementById('wx-desc').textContent='enter a city below';},{timeout:6000});
+}
+async function searchWxLocation(){
+  const q=document.getElementById('wx-loc-in').value.trim();
+  const err=document.getElementById('wx-loc-err');
+  if(!q)return;
+  err.textContent='';
+  document.getElementById('wx-desc').textContent='searching…';
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
+    const d=await r.json();
+    if(!d.length){err.textContent='location not found — try another city';document.getElementById('wx-desc').textContent='—';return;}
+    const{lat,lon,display_name}=d[0];
+    const short=display_name.split(',').slice(0,2).join(',').trim();
+    document.getElementById('wx-loc-in').value='';
+    loadWxCoords(parseFloat(lat),parseFloat(lon),short);
+  }catch(e){err.textContent='couldn\'t search — check connection';}
+}
+function wcode(c){if(c===0)return{label:'clear',icon:'☀️'};if(c<=2)return{label:'partly cloudy',icon:'⛅'};if(c===3)return{label:'overcast',icon:'☁️'};if(c<=49)return{label:'foggy',icon:'🌫️'};if(c<=57)return{label:'drizzle',icon:'🌦️'};if(c<=67)return{label:'rain',icon:'🌧️'};if(c<=77)return{label:'snow',icon:'❄️'};if(c<=82)return{label:'showers',icon:'🌦️'};return{label:'thunderstorm',icon:'⛈️'};}
+document.addEventListener("DOMContentLoaded",()=>{
+  try{
+    const saved=JSON.parse(localStorage.getItem('thoftly_data')||'{}');
+    if(saved.wxLoc||saved.wxTemp||saved.wxForecast) return;
+  }catch(e){}
+  loadWx();
+});
+// BILLS
+let bills=[];
+
+function updateBillAfter(){
+  const balance=parseFloat(document.getElementById('b-bal-input').value)||0;
+  const unpaidTotal=bills.filter(b=>!b.paid).reduce((a,b)=>a+b.amt,0);
+  const remaining=balance-unpaidTotal;
+  document.getElementById('b-after').textContent=`$${remaining.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+}
+
+function toggleBillPaid(i){
+  bills[i].paid=!bills[i].paid;
+  // if marking paid, deduct from balance
+  const balInput=document.getElementById('b-bal-input');
+  const currentBal=parseFloat(balInput.value)||0;
+  if(bills[i].paid){
+    balInput.value=(currentBal-bills[i].amt).toFixed(2);
+  } else {
+    // unchecking — add back to balance
+    balInput.value=(currentBal+bills[i].amt).toFixed(2);
+  }
+  renderBills();
+}
+
+function removeBill(i){
+  bills.splice(i,1);
+  renderBills();
+}
+
+function addBill(){
+  const n=document.getElementById('b-name').value.trim();
+  const a=parseFloat(document.getElementById('b-amt').value);
+  if(!n||isNaN(a)||a<=0)return;
+  bills.push({name:n,amt:a,due:'',paid:false});
+  renderBills();
+  document.getElementById('b-name').value='';
+  document.getElementById('b-amt').value='';
+  document.getElementById('b-name').focus();
+}
+
+function renderBills(){
+  const list=document.getElementById('b-list');
+  list.innerHTML='';
+  if(bills.length===0){
+    const empty=document.createElement('div');
+    empty.style.cssText='font-size:11px;color:var(--muted);text-align:center;padding:8px 4px;font-style:italic;';
+    empty.textContent='add your bills below to track them';
+    list.appendChild(empty);
+    updateBillAfter();
+    return;
+  }
+  bills.forEach((b,i)=>{
+    const d=document.createElement('div');
+    d.className='b-row'+(b.paid?' b-row-paid':'');
+
+    const cb=document.createElement('div');
+    cb.className='b-cb'+(b.paid?' paid':'');
+    cb.addEventListener('click',()=>{ toggleBillPaid(i); });
+
+    const nameIn=document.createElement('input');
+    nameIn.className='b-edit-name'+(b.paid?' b-paid-text':'');
+    nameIn.value=b.name;
+    nameIn.placeholder='bill name';
+    nameIn.addEventListener('change',()=>{bills[i].name=nameIn.value;});
+
+    const dollar=document.createElement('span');
+    dollar.textContent='$';
+    dollar.style.cssText='font-size:10px;color:var(--soft);flex-shrink:0;';
+
+    const amtIn=document.createElement('input');
+    amtIn.className='b-edit-amt'+(b.paid?' b-paid-text':'');
+    amtIn.type='number';
+    amtIn.value=b.amt;
+    amtIn.min='0';
+    amtIn.addEventListener('change',()=>{bills[i].amt=parseFloat(amtIn.value)||0;updateBillAfter();});
+
+    const rm=document.createElement('button');
+    rm.className='b-rm';
+    rm.textContent='×';
+    rm.title='remove';
+    rm.dataset.idx=i;
+    rm.addEventListener('click',function(){
+      const idx=parseInt(this.dataset.idx);
+      bills.splice(idx,1);
+      renderBills();
+    });
+
+    d.appendChild(cb);
+    d.appendChild(nameIn);
+    d.appendChild(dollar);
+    d.appendChild(amtIn);
+    d.appendChild(rm);
+    list.appendChild(d);
+  });
+  updateBillAfter();
+}
+document.addEventListener("DOMContentLoaded",()=>{renderBills();});
+// PLACES
+let places=[{name:'gmail',url:'https://gmail.com'},{name:'calendar',url:'https://calendar.google.com'},{name:'youtube',url:'https://youtube.com'},{name:'maps',url:'https://maps.google.com'},{name:'chatgpt',url:'https://chatgpt.com'},{name:'bank',url:'#'}];
+function renderPlaces(){const el=document.getElementById('pl-list');el.innerHTML='';places.forEach((p,i)=>{const d=document.createElement('div');d.className='pl-row';d.innerHTML=`<div class="pl-ico">${p.name[0].toLowerCase()}</div><a class="pl-nm" href="${p.url}" target="_blank">${p.name}</a><button class="pl-rm" title="remove" onclick="rmPlace(${i})">×</button>`;el.appendChild(d);});}
+function rmPlace(i){places.splice(i,1);renderPlaces();}
+function addPlace(){const n=document.getElementById('pl-name').value.trim();let u=document.getElementById('pl-url').value.trim();if(!n)return;if(u&&!u.startsWith('http'))u='https://'+u;places.push({name:n,url:u||'#'});renderPlaces();document.getElementById('pl-name').value='';document.getElementById('pl-url').value='';}
+document.addEventListener("DOMContentLoaded",()=>{renderPlaces();});
+// ONE THING
+function toggleDone(){const cb=document.getElementById('d-cb');cb.classList.toggle('done');const t=document.getElementById('one-txt');t.style.textDecoration=cb.classList.contains('done')?'line-through':'';t.style.color=cb.classList.contains('done')?'var(--soft)':'';}
+// CHIPS — horizontal pills
+const ALL_CHIPS=[
+  'start a morning routine','start a small garden','start a creative project',
+  'start a meal plan for the week','write a letter to someone i love',
+  'start a freelance business','build a daily reading habit',
+  'organize my home office','start learning something new',
+  'start a podcast','plan a trip','start a journal',
+  'learn to cook one new recipe','start a side hustle',
+  'declutter one room','start meditating','write a business plan',
+  'start a workout habit','learn a new skill','start saving money',
+  'fix something at home','start a blog','reach out to an old friend',
+  'start a DIY project','plan a garden','learn a language',
+  'start volunteering','write that thing you keep putting off'
+];
+function renderChips(){
+  // random on every page load
+  const shuffled=[...ALL_CHIPS].sort(()=>Math.random()-.5);
+  const pick=shuffled.slice(0,2);
+  const el=document.getElementById('chips');
+  el.innerHTML='';
+  pick.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='chip';
+    b.textContent=c;
+    b.onclick=()=>{document.getElementById('begin-in').value=c;doBegin();};
+    el.appendChild(b);
+  });
+}
+document.addEventListener("DOMContentLoaded",()=>{renderChips();});
+
+// TOGGLE WANT-TO PILL
+function toggleWantPill(input){
+  const ck=document.getElementById('want-ck');
+  const pill=document.getElementById('want-pill');
+  const isOn=input.checked;
+  if(isOn){
+    ck.classList.remove('off');ck.classList.add('on');
+    ck.innerHTML='<svg viewBox="0 0 10 8" fill="none" style="display:block;width:9px;height:7px;"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    pill.style.background='var(--accent-pale)';
+    pill.style.borderColor='rgba(74,92,63,.2)';
+    setTimeout(()=>document.getElementById('begin-in').focus(),150);
+  } else {
+    ck.classList.remove('on');ck.classList.add('off');
+    ck.innerHTML='';
+    pill.style.background='var(--bg)';
+    pill.style.borderColor='var(--border)';
+  }
+}
+// checklist state
+let activeList=null;
+let pendingBeginValue='';
+let replacingMainList=false;
+
+// get the active workspace column (always first one for now)
+function getCol2(){ return document.getElementById('ws-col-1'); }
+
+function hasMainListSomewhere(){
+  if(getCol2().querySelector('.cl-card:not(#cl-ld):not(.saved-chip)')) return true;
+  if(localStorage.getItem('thoftly_main_list_pending')==='1') return true;
+  if(localStorage.getItem('thoftly_main_list_exists')==='1') return true;
+  try{
+    const saved=JSON.parse(localStorage.getItem('thoftly_data')||'{}');
+    return !!(saved.generatedList&&saved.generatedList.sections&&saved.generatedList.sections.length);
+  }catch(e){return false;}
+}
+
+function doBegin(){
+  const val=document.getElementById('begin-in').value.trim();
+  if(!val)return;
+  if(!replacingMainList&&hasMainListSomewhere()){
+    pendingBeginValue=val;
+    showReplaceList();
+    return;
+  }
+  startBegin(val);
+}
+
+function startBegin(val){
+  localStorage.setItem('thoftly_main_list_pending','1');
+  localStorage.setItem('thoftly_main_list_exists','1');
+  activeList=null;
+  window._currentPrompt=val;
+  window._displayPrompt=val;
+  showLoading(val);
+  showKnowLoading();
+  genChecklist(val);
+  genKnow(val);
+}
+
+function showReplaceList(){document.getElementById('replace-list-modal').classList.add('open');}
+function closeReplaceList(){document.getElementById('replace-list-modal').classList.remove('open');pendingBeginValue='';}
+function confirmReplaceList(){
+  const val=pendingBeginValue||document.getElementById('begin-in').value.trim();
+  closeReplaceList();
+  if(val){
+    replacingMainList=true;
+    startBegin(val);
+    replacingMainList=false;
+  }
+}
+async function addSecondFromReplace(){
+  closeReplaceList();
+  await handleAddCol();
+}
+
+function showLoading(topic){
+  const col2=getCol2();
+  const ex=col2.querySelector('.cl-card');if(ex)ex.remove();
+  const em=col2.querySelector('.ws-empty');if(em)em.remove();
+  // show reassuring loading card
+  const messages=[
+    'building your list…',
+    'thinking through the steps…',
+    'putting your plan together…',
+    'finding your first step…',
+    'making this manageable…'
+  ];
+  const msg=messages[Math.floor(Math.random()*messages.length)];
+  const ld=document.createElement('div');
+  ld.className='cl-card';ld.id='cl-ld';
+  ld.innerHTML=`<div style="padding:32px 24px;text-align:center;">
+    <div style="font-size:22px;margin-bottom:14px;opacity:.5;animation:pulse 1.5s ease-in-out infinite;">✦</div>
+    <div style="font-size:12px;color:var(--muted);font-style:italic;line-height:1.7;">${msg}</div>
+    <div style="font-size:10px;color:var(--soft);margin-top:8px;">"${topic}"</div>
+  </div>`;
+  col2.insertBefore(ld, col2.firstChild);
+}
+
+function showKnowLoading(){
+  document.getElementById('know-content').innerHTML='<div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div><div style="font-size:22px;margin-top:10px;opacity:.45;animation:pulse 1.5s ease-in-out infinite;text-align:center;">✦</div>';
+}
+
+async function genChecklist(topic){
+  document.getElementById('begin-btn').disabled=true;
+  try{
+    const res=await fetch('/api/claude',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1600,
+        messages:[{role:'user',content:`Someone wants to: "${topic}"
+
+Decide: do you have enough information to build a truly useful, specific checklist for this person?
+
+If yes — build the checklist directly.
+If no — ask 2-4 clarifying questions that would help you give them a much better, more relevant list. The questions should be natural and specific to whatever they want to do. Use your judgment about what matters most to know.
+
+Return ONLY valid JSON, double quotes only, no apostrophes in values:
+{"title":"short friendly lowercase title","tagline":"one gentle encouraging phrase","facts":["fact 1","fact 2","fact 3","fact 4"],"needs_more_info":false,"clarifying_questions":[],"sections":[{"name":"section name","items":["specific doable step"]}]}
+
+facts = 4 short reassuring things to know before starting, under 12 words each, lowercase.`}]})
+    });
+    if(!res.ok){const t=await res.text();throw new Error(`${res.status}: ${t}`);}
+    const data=await res.json();
+    const text=data.content.map(i=>i.text||'').join('').trim();
+    const parsed = safeParseJSON(text, topic);
+    if(!parsed){
+      throw new Error('Could not parse response — please try again');
+    }
+
+    if(parsed.needs_more_info && parsed.clarifying_questions && parsed.clarifying_questions.length){
+      const ld=document.getElementById('cl-ld');if(ld)ld.remove();
+      showInlineQuestions(topic, parsed.clarifying_questions);
+      document.getElementById('begin-btn').disabled=false;
+      return;
+    }
+
+    activeList={title:parsed.title||topic,topic,data:parsed};
+    const ld=document.getElementById('cl-ld');if(ld)ld.remove();
+    renderChecklist(parsed,false);
+    // also render the facts in col1
+    if(parsed.facts && parsed.facts.length) renderKnow(parsed.facts);
+  }catch(e){
+    const col2=getCol2();
+    const ld=document.getElementById('cl-ld');if(ld)ld.remove();
+    const d=document.createElement('div');
+    d.style.cssText='padding:20px;font-size:11px;color:#b85c4a;font-style:italic;';
+    d.textContent='error: '+e.message;
+    col2.insertBefore(d,col2.firstChild);
+  }
+  document.getElementById('begin-btn').disabled=false;
+}
+
+async function genKnow(topic){
+  try{
+    const promptAtStart=window._currentPrompt;
+    const res=await fetch('/api/claude',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:350,
+        messages:[{role:'user',content:`Someone wants to: "${topic}"
+
+Return ONLY valid JSON, double quotes only, no apostrophes in values:
+{"facts":["fact 1","fact 2","fact 3","fact 4"]}
+
+facts = 4 short reassuring things to know before starting, under 12 words each, lowercase.`}]})
+    });
+    if(!res.ok)return;
+    const data=await res.json();
+    const text=data.content.map(i=>i.text||'').join('').trim();
+    const parsed=safeParseJSON(text,topic);
+    if(promptAtStart===window._currentPrompt && parsed.facts&&parsed.facts.length) renderKnow(parsed.facts);
+  }catch(e){}
+}
+
+function renderKnow(facts){
+  const el=document.getElementById('know-content');
+  el.innerHTML='<div class="know-hint"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>'
+    +facts.map(f=>`
+    <div class="know-item">
+      <div class="know-dot"></div>
+      <span>${f}</span>
+    </div>`).join('');
+}
+function renderChecklist(data,isSaved){
+  const col2=getCol2();
+  const ex=col2.querySelector('.cl-card:not(.saved-chip)');if(ex)ex.remove();
+  const em=col2.querySelector('.ws-empty');if(em)em.remove();
+  // prompt header
+  const prompt=window._displayPrompt||window._currentPrompt||'';
+  const promptHtml=prompt?`<div style="font-size:10px;color:var(--muted);font-style:italic;margin-bottom:8px;padding:6px 8px;background:var(--bg);border-radius:6px;">started with: "${prompt}"</div>`:'';
+  // first things to know — embed in checklist so it gets saved with it
+  const facts=data.facts&&data.facts.length?data.facts:[];
+  const knowHtml=facts.length?`<div style="margin:0 0 12px;padding:8px 10px;background:var(--bg);border-radius:8px;">
+    <div style="font-size:9px;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">first things to know</div>
+    ${facts.map(f=>`<div class="know-item list-fact"><div class="know-dot"></div><span contenteditable="true">${f}</span></div>`).join('')}
+  </div>`:''
+  const sectHtml=data.sections.map(sec=>`
+    <div class="cl-sec">
+      <div class="cl-sec-hdr">
+        <div class="sec-ck" onclick="this.classList.toggle('done')"></div>
+        <div class="sec-nm">${sec.name}</div>
+      </div>
+      <div class="cl-items">
+        ${sec.items.map(item=>`
+          <div class="cl-item">
+            <div class="i-ck" onclick="toggleItemByBox(this)"></div>
+            <span class="i-txt" contenteditable="true">${item}</span>
+            <button class="i-del" onclick="this.closest('.cl-item').remove()">×</button>
+          </div>`).join('')}
+        <div class="add-row">
+          <input class="add-in" placeholder="+ add a step…" onkeydown="addStep(event,this)">
+          <button class="add-btn" onclick="addStepBtn(this)">+</button>
+        </div>
+      </div>
+    </div>`).join('');
+  const div=document.createElement('div');
+  div.className='cl-card';
+  // clarify button if topic is broad
+  const broadTopics=['business','company','startup','app','website','freelance'];
+  const isBroad=broadTopics.some(t=>prompt.toLowerCase().includes(t));
+  const clarifyBtn=isBroad&&!data._clarified?`<button class="btn-clarify" onclick="showClarify()">tell me more about your idea →</button>`:'';
+
+  div.innerHTML=`<div class="cl-hd">
+    <div><div class="cl-tagline">${data.tagline||'a gentle start'}</div><div class="cl-title">${data.title}</div></div>
+    <div class="cl-acts"><button class="btn-clr" onclick="clearWs()">✕</button></div>
+  </div>
+  <div class="cl-body">
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+      <button onclick="doSmaller()" style="border:1px solid var(--border);border-radius:20px;padding:3px 10px;background:none;font-family:inherit;cursor:pointer;font-size:10px;color:var(--muted);">↓ start smaller</button>
+      ${clarifyBtn}
+    </div>
+    ${promptHtml}
+    ${knowHtml}
+    ${sectHtml}
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;">
+      <button id="go-deeper-btn" onclick="goDeeper(this)" style="width:100%;background:var(--accent-pale);border:1px solid var(--accent);border-radius:8px;padding:8px;font-size:11px;font-family:inherit;color:var(--accent);cursor:pointer;">↑ go deeper — add more steps</button>
+      <button id="ask-more-bottom-btn" onclick="askMoreFromList(this)" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:11px;font-family:inherit;color:var(--muted);cursor:pointer;">ask optional questions to make it more specific</button>
+    </div>
+  </div>`;
+  col2.insertBefore(div,col2.firstChild);
+  localStorage.setItem('thoftly_main_list_exists','1');
+  localStorage.removeItem('thoftly_main_list_pending');
+  if(!applyingRemoteListUpdate){
+    saveToLocal();
+    scheduleLiveSave();
+  }
+}
+
+function toggleItemByBox(ckEl){
+  const item=ckEl.closest('.cl-item');
+  ckEl.classList.toggle('done');
+  const t=item.querySelector('.i-txt');
+  t.classList.toggle('done-t',ckEl.classList.contains('done'));
+}
+// keep old toggleItem for insertStep-created items
+function toggleItem(el){
+  const ck=el.querySelector('.i-ck');
+  if(!ck)return;
+  toggleItemByBox(ck);
+}
+function addStep(e,input){if(e.key!=='Enter')return;e.preventDefault();insertStep(input);}
+function addStepBtn(btn){insertStep(btn.previousElementSibling);}
+function insertStep(input){
+  const val=input.value.trim();if(!val)return;
+  const row=input.closest('.add-row');
+  const div=document.createElement('div');div.className='cl-item';
+  div.innerHTML=`<div class="i-ck" onclick="toggleItemByBox(this)"></div><span class="i-txt" contenteditable="true">${val}</span><button class="i-del" onclick="this.closest('.cl-item').remove()">×</button>`;
+  row.parentElement.insertBefore(div,row);
+  input.value='';
+}
+function doBeginInCol(colId){
+  const input=document.getElementById('begin-in-'+colId);
+  if(!input)return;
+  const val=input.value.trim();
+  if(!val)return;
+  const col=document.getElementById(colId);
+  const emptyEl=col.querySelector('.ws-empty');
+  if(emptyEl)emptyEl.remove();
+  // show loading state
+  const ld=document.createElement('div');
+  ld.className='cl-card';ld.id='cl-ld-'+colId;
+  ld.innerHTML=`<div style="padding:32px 24px;text-align:center;">
+    <div style="font-size:22px;margin-bottom:14px;opacity:.5;animation:pulse 1.5s ease-in-out infinite;">✦</div>
+    <div style="font-size:12px;color:var(--muted);font-style:italic;">making this feel manageable…</div>
+    <div style="font-size:10px;color:var(--soft);margin-top:8px;">"${val}"</div>
+  </div>`;
+  col.appendChild(ld);
+  // single API call — checklist + facts together
+  fetch('/api/claude',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1600,
+      messages:[{role:'user',content:`Create a gentle, actionable checklist to help someone start: "${val}"
+
+If the topic is too vague, set needs_more_info to true and write 3 short clarifying questions instead.
+
+Return ONLY valid JSON, double quotes only, no apostrophes in values:
+{"title":"short title","tagline":"encouraging phrase","facts":["fact 1","fact 2","fact 3","fact 4"],"needs_more_info":false,"clarifying_questions":[],"sections":[{"name":"section","items":["step"]}]}
+
+facts = 4 short reassuring things to know, under 12 words each, lowercase.`}]})
+  }).then(r=>r.json()).then(data=>{
+    const ldEl=document.getElementById('cl-ld-'+colId);if(ldEl)ldEl.remove();
+    const text=data.content.map(i=>i.text||'').join('').trim();
+    const parsed=safeParseJSON(text,val);
+    if(parsed){
+      parsed.prompt=val;
+      renderChecklistInto(parsed,col,false,colId);
+    }
+  }).catch(e=>{
+    const ldEl=document.getElementById('cl-ld-'+colId);if(ldEl)ldEl.remove();
+    console.error(e);
+  });
+}
+
+function renderChecklistInto(data, container, isSaved, colId){
+  // remove empty state but keep the input card if it exists
+  const empty=container.querySelector('.ws-empty');if(empty)empty.remove();
+  const existingCl=container.querySelector('.cl-card:not(:first-child)');if(existingCl)existingCl.remove();
+  // embed facts inside the checklist card
+  const knowHtml=data.facts&&data.facts.length?
+    `<div style="margin:0 0 12px;padding:8px 10px;background:var(--bg);border-radius:8px;">
+      <div class="know-title" style="margin-bottom:6px;">first things to know</div>
+      ${data.facts.map(f=>`<div class="know-item"><div class="know-dot"></div><span>${f}</span></div>`).join('')}
+    </div>`:'';
+  const sectHtml=data.sections.map(sec=>`
+    <div class="cl-sec">
+      <div class="cl-sec-hdr">
+        <div class="sec-ck" onclick="this.classList.toggle('done')"></div>
+        <div class="sec-nm">${sec.name}</div>
+      </div>
+      <div class="cl-items">
+        ${sec.items.map(item=>`
+          <div class="cl-item">
+            <div class="i-ck" onclick="toggleItemByBox(this)"></div>
+            <span class="i-txt" contenteditable="true">${item}</span>
+            <button class="i-del" onclick="this.closest('.cl-item').remove()">×</button>
+          </div>`).join('')}
+        <div class="add-row">
+          <input class="add-in" placeholder="+ add a step…" onkeydown="addStep(event,this)">
+          <button class="add-btn" onclick="addStepBtn(this)">+</button>
+        </div>
+      </div>
+    </div>`).join('');
+  const div=document.createElement('div');
+  div.className='cl-card';
+  const promptHtml=data.prompt?`<div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-style:italic;">started with: "${data.prompt}"</div>`:'';
+  div.innerHTML=`<div class="cl-hd"><div><div class="cl-tagline">${data.tagline||'saved'}</div><div class="cl-title">${data.title}</div></div><div class="cl-acts"><button class="btn-clr" onclick="this.closest('.workspace-col').remove()">✕</button></div></div>
+  <div class="cl-body">
+    <div style="margin-bottom:10px;">
+      <button onclick="doSmallerInCol(this,'${colId||''}')" style="border:1px solid var(--border);border-radius:20px;padding:3px 10px;background:none;font-family:inherit;cursor:pointer;font-size:10px;color:var(--muted);">↓ start smaller</button>
+    </div>
+    ${promptHtml}${knowHtml}${sectHtml}
+    <div style="margin-top:14px;">
+      <button onclick="goDeeperInCol(this,'${colId||''}')" style="width:100%;background:var(--accent-pale);border:1px solid var(--accent);border-radius:8px;padding:8px;font-size:11px;font-family:inherit;color:var(--accent);cursor:pointer;">↑ go deeper — add more steps</button>
+    </div>
+  </div>`;
+  container.appendChild(div);
+}
+function clearWs(keepSaved){
+  const col2=getCol2();
+  const cl=col2.querySelector('.cl-card');if(cl)cl.remove();
+  if(!keepSaved){col2.querySelectorAll('.saved-chip').forEach(c=>c.remove());}
+  activeList=null;
+  if(!col2.querySelector('.ws-empty')){
+    const e=document.createElement('div');e.className='ws-empty';e.id='ws-empty';
+    e.innerHTML='type something above<br>and press <strong>begin</strong><br><br><span style="font-size:10px;opacity:.7">your checklist appears here</span>';
+    col2.insertBefore(e,col2.firstChild);
+  }
+  // reset know section and want-pill
+  if(!keepSaved){
+    try{
+      const raw=localStorage.getItem('thoftly_data');
+      if(raw){
+        const data=JSON.parse(raw);
+        delete data.generatedList;
+        localStorage.setItem('thoftly_data',JSON.stringify(data));
+      }
+      localStorage.removeItem('thoftly_main_list_pending');
+      localStorage.removeItem('thoftly_main_list_exists');
+      localStorage.setItem('thoftly_clear_main_list_at',String(Date.now()));
+    }catch(e){}
+    document.getElementById('know-content').innerHTML='<div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>';
+    const pill=document.getElementById('want-pill');
+    if(pill){pill.classList.remove('on');pill.classList.add('off');}
+    const wck=document.getElementById('want-ck');
+    if(wck){wck.classList.remove('on');wck.classList.add('off');wck.innerHTML='';}
+  }
+}
+
+function clearWsFromOtherTab(){
+  clearWs(true);
+  try{
+    const raw=localStorage.getItem('thoftly_data');
+    if(raw){
+      const data=JSON.parse(raw);
+      delete data.generatedList;
+      localStorage.setItem('thoftly_data',JSON.stringify(data));
+    }
+    localStorage.removeItem('thoftly_main_list_pending');
+    localStorage.removeItem('thoftly_main_list_exists');
+  }catch(e){}
+  document.getElementById('know-content').innerHTML='<div class="know-hint" id="know-title-lbl"><span style="text-transform:uppercase;letter-spacing:.06em;font-style:normal;font-size:9px;color:var(--soft);">first things to know</span>, list will load here, takes a moment…</div>';
+}
+function doSmaller(){if(!activeList)return;const topic=activeList.topic+' — just the very first tiny step';activeList=null;showLoading('something smaller…');genChecklist(topic);}
+// ADD WORKSPACE COLUMN
+let wsColCount = 1;
+const FREE_WS_LIMIT = 2;
+
+function addWorkspaceCol(skipLimit) {
+  if (!skipLimit && wsColCount >= FREE_WS_LIMIT) {
+    showPaywall();
+    return;
+  }
+  wsColCount++;
+  const track = document.getElementById('workspace-track');
+  const col = document.createElement('div');
+  col.className = 'workspace-col';
+  col.id = 'ws-col-' + wsColCount;
+  const colId = 'ws-col-'+wsColCount;
+  col.innerHTML = `
+    <div class="cl-card" style="margin-bottom:12px;">
+      <div style="padding:14px 14px 10px;">
+        <div class="in-lbl">what do you want to start?</div>
+        <div class="begin-row">
+          <input class="begin-in" id="begin-in-${colId}" placeholder="a letter, a walk, a business…"
+            onkeydown="if(event.key==='Enter')doBeginInCol('${colId}')">
+          <button class="btn-begin" onclick="doBeginInCol('${colId}')">begin</button>
+        </div>
+      </div>
+    </div>
+    <div class="ws-empty" id="ws-empty-${colId}">
+      <div style="font-size:26px;margin-bottom:14px;opacity:.3">✦</div>
+      <div style="font-size:13px;margin-bottom:6px;opacity:.6">your checklist will appear here</div>
+    </div>`;
+  track.appendChild(col);
+  setTimeout(() => col.scrollIntoView({ behavior: 'smooth', inline: 'end' }), 50);
+  // after first free add, change button to paywall nudge
+  const btn = document.getElementById('add-col-btn');
+  const label = document.getElementById('add-col-label');
+  label.textContent = 'add unlimited starts';
+  btn.style.borderStyle = 'dashed';
+  btn.title = 'upgrade for unlimited columns';
+}
+
+// MOBILE — new layout handles itself via CSS flex, no JS needed
+function initMobile(){ }
+window.addEventListener('load', initMobile);
+
+// PAYWALL
+function showPaywall(){document.getElementById('paywall').classList.add('open');}
+function closePaywall(){document.getElementById('paywall').classList.remove('open');}
+function selPlan(p){document.getElementById('pc-mo').classList.toggle('sel',p==='mo');document.getElementById('pc-yr').classList.toggle('sel',p==='yr');}
+
+// TOGGLE "I WANT TO START SOMETHING"
+function toggleWantTo(row){
+  const ck=row.querySelector('.pill-ck');
+  const isOn=ck.classList.contains('on');
+  if(isOn){
+    ck.classList.remove('on');ck.classList.add('off');
+    ck.innerHTML='';
+    row.classList.remove('on');row.classList.add('off');
+    row.style.background='';
+    row.style.borderColor='';
+  } else {
+    ck.classList.remove('off');ck.classList.add('on');
+    ck.innerHTML='<svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    row.classList.remove('off');row.classList.add('on');
+    setTimeout(()=>document.getElementById('begin-in').focus(),200);
+  }
+}
+
+// TOPBAR SUBSCRIBE
+function topbarSubscribe(){
+  const emailInput=document.getElementById('topbar-email');
+  const email=emailInput?emailInput.value.trim():'';
+  // Open the Ghost site directly — the banner subscribe form works there reliably.
+  // If user typed a valid email, pre-fill it via the portal signup URL.
+  let url='https://thoftly.ghost.io/';
+  if(email && email.includes('@') && email.includes('.')){
+    url='https://thoftly.ghost.io/#/portal/signup?email='+encodeURIComponent(email);
+  }
+  window.open(url,'_blank');
+}
+
+async function sendTopbarMagicLink(email){
+  const cleanEmail=email.trim().toLowerCase();
+  const btn=document.querySelector('.top-sub button');
+  const tagline=document.querySelector('.sub-tagline-row span');
+  const originalBtnText=btn?btn.textContent:'subscribe free';
+  const originalTagText=tagline?tagline.textContent:'';
+  if(btn){btn.textContent='sending…';btn.disabled=true;}
+  if(tagline) tagline.textContent='sending magic link…';
+
+  // try to save to Supabase if available, but don't block on it
+  const db=getSupabase();
+  if(db){
+    try{ await saveFirstListToSupabase(cleanEmail); }catch(e){}
+  }
+  try{
+    await sendGhostMagicLink(cleanEmail,'save');
+    if(tagline){
+      tagline.textContent='✓ check your email for the magic link';
+      tagline.style.color='var(--accent)';
+    }
+    if(btn){btn.textContent='✓ sent';btn.disabled=true;}
+    try{ localStorage.setItem('thoftly_pending_email', cleanEmail); }catch(e){}
+    // Reset button after 5 seconds
+    setTimeout(()=>{
+      if(btn){btn.textContent=originalBtnText;btn.disabled=false;}
+    },5000);
+  }catch(e){
+    if(tagline){
+      tagline.textContent='could not send — try again';
+      tagline.style.color='var(--red)';
+    }
+    if(btn){btn.textContent=originalBtnText;btn.disabled=false;}
+    setTimeout(()=>{
+      if(tagline){tagline.textContent=originalTagText;tagline.style.color='';}
+    },4000);
+    console.error('Topbar magic link error:',e);
+  }
+}
+
+function openGhostPortal(){
+  loginMode='save';
+  openLogin(null);
+}
+
+function openExistingLogin(){
+  // Send the user to the Ghost site where the Portal can actually authenticate them.
+  // After they sign in, Ghost's session cookie will be set on www.thoftly.com,
+  // and when they come back here (via the iframe on the homepage, or directly),
+  // the postMessage bridge will tell us who they are.
+  const url = 'https://www.thoftly.com/#/portal/signin';
+  // If we're in an iframe, navigate the top window so the Ghost Portal can take over fully
+  try {
+    if (window.top && window.top !== window) {
+      window.top.location.href = url;
+      return;
+    }
+  } catch(e){}
+  window.open(url, '_blank');
+}
+
+async function logoutUser(event){
+  if(event){
+    event.preventDefault();
+    event.stopPropagation();
+    if(event.stopImmediatePropagation) event.stopImmediatePropagation();
+  }
+  // Tell the parent Ghost site to also sign this user out
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'thoftly-logout-request' }, '*');
+    }
+  } catch(e){}
+  currentUserEmail='';
+  pendingSecondList=false;
+  clearTimeout(liveSaveTimer);
+  liveSaveInFlight=false;
+  const ghostSignout=document.getElementById('ghost-signout');
+  if(ghostSignout) ghostSignout.click();
+  const topEmail=document.getElementById('topbar-email');
+  if(topEmail) topEmail.value='';
+  const loginEmail=document.getElementById('login-email');
+  if(loginEmail) loginEmail.value='';
+  const db=getSupabase();
+  try{
+    if(db&&db.auth&&typeof db.auth.signOut==='function'){
+      await db.auth.signOut();
+    }
+  }catch(e){}
+  Object.keys(localStorage)
+    .filter(key=>key.startsWith('thoftly_')||key.startsWith('sb-')||key.includes('supabase'))
+    .forEach(key=>localStorage.removeItem(key));
+  Object.keys(sessionStorage)
+    .filter(key=>key.startsWith('thoftly_')||key.startsWith('sb-')||key.includes('supabase'))
+    .forEach(key=>sessionStorage.removeItem(key));
+  const cleanUrl=window.location.origin+window.location.pathname+'?logged_out='+Date.now();
+  window.location.replace(cleanUrl);
+  return false;
+}
+
+function openPaidGhostPortal(event){
+  if(event)event.preventDefault();
+  const email=currentUserEmail||localStorage.getItem('thoftly_email')||'';
+  const url=email&&email.includes('@')
+    ?`${GHOST_URL}/#/portal/signup?email=${encodeURIComponent(email)}`
+    :`${GHOST_URL}/#/portal/signup`;
+  window.open(url,'_blank');
+}
+
+async function handleAddCol(){
+  pendingSecondList=true;
+  const result=await canCreateSecondList();
+  if(result.allowed){
+    pendingSecondList=false;
+    addWorkspaceCol(true);
+    return;
+  }
+  if(result.needsEmail){
+    // User isn't logged in. Send them to Ghost to subscribe/sign in (the working flow).
+    openExistingLogin();
+    return;
+  }
+  if(result.error){
+    alert(result.error);
+    return;
+  }
+  showPaywall();
+}
+
+// COL1 SUBSCRIBE
+function col1Subscribe(){
+  const email=document.getElementById('topbar-email')?document.getElementById('topbar-email').value.trim():'';
+  loginMode='save';
+  openLogin();
+  if(email&&email.includes('@')) document.getElementById('login-email').value=email;
+}
+
+// HOMEPAGE HELP
+function detectBrowser(){
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isAndroid = /Android/.test(ua);
+  const isMac = /Mac OS X/.test(ua) && !isIOS;
+  const isMobile = isIOS || isAndroid;
+  // Browser detection (order matters - check Edge before Chrome, etc.)
+  let browser = 'other';
+  if (/Edg\//.test(ua)) browser = 'edge';
+  else if (/OPR\//.test(ua) || /Opera/.test(ua)) browser = 'opera';
+  else if (/Firefox\//.test(ua)) browser = 'firefox';
+  else if (/Chrome\//.test(ua) && !isIOS) browser = 'chrome';
+  else if (/Safari\//.test(ua) && (isMac || isIOS)) browser = 'safari';
+  return { browser, isIOS, isAndroid, isMac, isMobile };
+}
+
+function showHomepageHelp(){
+  const info = detectBrowser();
+  const body = document.getElementById('hp-modal-body');
+  const title = document.getElementById('hp-modal-title');
+  const url = 'https://www.thoftly.com';
+  const urlPlain = 'www.thoftly.com';
+
+  let html = '';
+
+  // iOS: Add to Home Screen is the best path
+  if (info.isIOS) {
+    title.textContent = 'add thoftly to your home screen';
+    html = `
+      <div style="padding:12px;background:var(--accent-pale);border-radius:8px;margin-bottom:12px;line-height:1.7;">
+        <div style="font-weight:500;color:var(--accent);margin-bottom:8px;">on iPhone, the easiest way is to add it to your home screen — like an app:</div>
+        <ol style="margin:0;padding-left:18px;font-size:12px;">
+          <li>tap the <strong>share button</strong> at the bottom of Safari (square with up arrow)</li>
+          <li>scroll down and tap <strong>"add to home screen"</strong></li>
+          <li>tap <strong>add</strong> in the top-right</li>
+        </ol>
+      </div>
+      <div style="font-size:11px;color:var(--muted);font-style:italic;">unfortunately, iOS doesn't let websites set themselves as the new tab page — but the home screen icon is one tap away, just like an app.</div>
+    `;
+  }
+  // Mac Safari: native homepage works
+  else if (info.browser === 'safari' && info.isMac) {
+    title.textContent = 'set thoftly as your safari homepage';
+    html = `
+      <div style="padding:12px;background:var(--accent-pale);border-radius:8px;margin-bottom:12px;line-height:1.7;">
+        <ol style="margin:0;padding-left:18px;font-size:12px;">
+          <li>open <strong>Safari → Settings</strong> (⌘,)</li>
+          <li>go to the <strong>General</strong> tab</li>
+          <li>in the <strong>Homepage</strong> field, paste: <code style="background:var(--card);padding:2px 6px;border-radius:4px;">${urlPlain}</code></li>
+          <li>set <strong>"new tabs open with"</strong> and <strong>"new windows open with"</strong> to <strong>Homepage</strong></li>
+        </ol>
+      </div>
+      <div style="font-size:11px;color:var(--muted);font-style:italic;">every new tab and window will open thoftly.</div>
+    `;
+  }
+  // Firefox desktop: needs extension for new tab override
+  else if (info.browser === 'firefox') {
+    title.textContent = 'set thoftly as your firefox start page';
+    html = `
+      <div style="padding:12px;background:var(--accent-pale);border-radius:8px;margin-bottom:10px;line-height:1.7;">
+        <div style="font-weight:500;color:var(--accent);margin-bottom:8px;">for every new tab:</div>
+        <a href="https://addons.mozilla.org/en-US/firefox/addon/new-tab-override/" target="_blank" rel="noopener" class="btn-up" style="display:inline-block;text-decoration:none;font-size:11px;padding:5px 12px;margin:0 0 8px;">open add-on page →</a>
+        <div style="font-size:12px;">install <strong>"new tab override"</strong>, then in its settings paste: <code style="background:var(--card);padding:2px 6px;border-radius:4px;">${urlPlain}</code></div>
+      </div>
+      <div style="padding:12px;background:var(--accent-pale);border-radius:8px;margin-bottom:10px;line-height:1.7;">
+        <div style="font-weight:500;color:var(--accent);margin-bottom:8px;">for homepage (when firefox starts):</div>
+        <ol style="margin:0;padding-left:18px;font-size:12px;">
+          <li>open <strong>Settings → Home</strong></li>
+          <li>set homepage to <strong>Custom URLs</strong> and paste: <code style="background:var(--card);padding:2px 6px;border-radius:4px;">${urlPlain}</code></li>
+        </ol>
+      </div>
+    `;
+  }
+  // Chrome / Edge / other Chromium: settings work for startup, extension for new tab
+  else if (info.browser === 'chrome' || info.browser === 'edge' || info.browser === 'opera') {
+    const browserName = info.browser === 'edge' ? 'Edge' : info.browser === 'opera' ? 'Opera' : 'Chrome';
+    const storeUrl = info.browser === 'edge'
+      ? 'https://microsoftedge.microsoft.com/addons/search/new%20tab'
+      : 'https://chromewebstore.google.com/search/new%20tab%20redirect';
+    title.textContent = `set thoftly as your ${browserName.toLowerCase()} start page`;
+    html = `
+      <div style="padding:12px;background:var(--accent-pale);border-radius:8px;margin-bottom:10px;line-height:1.7;">
+        <div style="font-weight:500;color:var(--accent);margin-bottom:8px;">for every new tab:</div>
+        <a href="${storeUrl}" target="_blank" rel="noopener" class="btn-up" style="display:inline-block;text-decoration:none;font-size:11px;padding:5px 12px;margin:0 0 8px;">open ${browserName} store →</a>
+        <div style="font-size:12px;">search for <strong>"new tab redirect"</strong> or <strong>"custom new tab url"</strong>, install it, then in its settings paste: <code style="background:var(--card);padding:2px 6px;border-radius:4px;">${urlPlain}</code></div>
+      </div>
+      <div style="padding:12px;background:var(--accent-pale);border-radius:8px;margin-bottom:10px;line-height:1.7;">
+        <div style="font-weight:500;color:var(--accent);margin-bottom:8px;">for when ${browserName} starts:</div>
+        <ol style="margin:0;padding-left:18px;font-size:12px;">
+          <li>open <strong>Settings → On startup</strong></li>
+          <li>choose <strong>"open a specific page or set of pages"</strong></li>
+          <li>paste: <code style="background:var(--card);padding:2px 6px;border-radius:4px;">${urlPlain}</code></li>
+        </ol>
+      </div>
+    `;
+  }
+  // Android (Chrome mobile)
+  else if (info.isAndroid) {
+    title.textContent = 'add thoftly to your home screen';
+    html = `
+      <div style="padding:12px;background:var(--accent-pale);border-radius:8px;margin-bottom:12px;line-height:1.7;">
+        <div style="font-weight:500;color:var(--accent);margin-bottom:8px;">on android, add it to your home screen for one-tap access:</div>
+        <ol style="margin:0;padding-left:18px;font-size:12px;">
+          <li>tap the <strong>three-dot menu</strong> in your browser</li>
+          <li>tap <strong>"add to home screen"</strong> or <strong>"install app"</strong></li>
+          <li>tap <strong>add</strong> to confirm</li>
+        </ol>
+      </div>
+      <div style="font-size:11px;color:var(--muted);font-style:italic;">mobile browsers don't let websites set themselves as the new tab page — but a home screen icon is just as fast.</div>
+    `;
+  }
+  // Fallback
+  else {
+    title.textContent = 'set thoftly as your start page';
+    html = `
+      <div style="padding:12px;background:var(--bg);border-radius:8px;line-height:1.8;font-size:12px;">
+        <div style="margin-bottom:8px;">most browsers let you set a homepage in settings:</div>
+        <ul style="margin:0;padding-left:18px;">
+          <li>open your browser's <strong>settings</strong></li>
+          <li>find <strong>"homepage"</strong> or <strong>"on startup"</strong></li>
+          <li>paste: <code style="background:var(--card);padding:2px 6px;border-radius:4px;">${url}</code></li>
+        </ul>
+        <div style="margin-top:10px;font-size:11px;color:var(--muted);">to make every new tab open thoftly, search your browser's extension store for <strong>"new tab redirect"</strong>.</div>
+      </div>
+    `;
+  }
+
+  body.innerHTML = html;
+  document.getElementById('homepage-modal').classList.add('open');
+}
+function closeHomepageHelp(){ document.getElementById('homepage-modal').classList.remove('open'); }
+
+// GHOST MAGIC LINK LOGIN
+const GHOST_URL = 'https://thoftly.ghost.io';
+
+function openLogin(e){
+  if(e)e.preventDefault();
+  const title=document.getElementById('login-modal-title');
+  const body=document.getElementById('login-modal-body');
+  const btn=document.getElementById('login-submit-btn');
+  const emailArea=document.getElementById('login-email-area');
+  const alreadyIn=document.getElementById('login-already-in');
+  const alreadyMsg=document.getElementById('login-already-msg');
+
+  // check if already logged in
+  const savedEmail=currentUserEmail||localStorage.getItem('thoftly_email')||'';
+  if(savedEmail){
+    // show logged in state
+    if(title) title.textContent='you are signed in';
+    if(body) body.textContent='';
+    if(alreadyMsg) alreadyMsg.textContent='signed in as '+savedEmail;
+    if(alreadyIn) alreadyIn.style.display='block';
+    if(emailArea) emailArea.style.display='none';
+  } else {
+    // show email entry state
+    if(alreadyIn) alreadyIn.style.display='none';
+    if(emailArea) emailArea.style.display='flex';
+    if(loginMode==='load'){
+      if(title) title.textContent='log in';
+      if(body) body.textContent='enter your email and we will send a magic link to open your saved start.';
+      if(btn) btn.textContent='send magic link →';
+    } else {
+      if(title) title.textContent='save your starts';
+      if(body) body.textContent='enter your email to save your widgets and first start for free.';
+      if(btn) btn.textContent='subscribe free — send magic link →';
+    }
+  }
+  document.getElementById('login-modal').classList.add('open');
+  setTimeout(()=>{
+    const el=document.getElementById('login-email');
+    if(el&&emailArea&&emailArea.style.display!=='none') el.focus();
+  },200);
+}
+function closeLogin(){
+  document.getElementById('login-modal').classList.remove('open');
+  document.getElementById('login-email').value='';
+  document.getElementById('login-msg').textContent='';
+}
+
+function openGhostPortalForEmail(email,mode){
+  const flow=mode==='load'?'signin':'signup';
+  const url=email&&email.includes('@')
+    ?`#/portal/${flow}?email=${encodeURIComponent(email)}`
+    :`#/portal/${flow}`;
+  window.location.hash=url.replace(/^#/, '');
+}
+
+async function sendGhostMagicLink(email,mode){
+  // Use the hidden Ghost members form — same mechanism that works on the banner.
+  // Ghost's portal.min.js (loaded in <head>) intercepts data-members-form submits and handles auth.
+  const form=document.getElementById('ghost-members-form');
+  const ghostEmail=document.getElementById('ghost-members-email');
+  if(!form || !ghostEmail) throw new Error('Ghost members form not found in page');
+
+  // Set the form mode and email
+  form.setAttribute('data-members-form', mode==='load' ? 'signin' : 'signup');
+  ghostEmail.value=email;
+
+  // Submit. Ghost Portal will pick this up and trigger the magic link flow.
+  if(typeof form.requestSubmit==='function'){
+    form.requestSubmit();
+  } else {
+    form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  }
+  return true;
+}
+
+async function submitLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const msg=document.getElementById('login-msg');
+  if(!email||!email.includes('@')){msg.textContent='please enter a valid email';msg.style.color='var(--red)';return;}
+  msg.textContent='sending magic link…';
+  msg.style.color='var(--accent)';
+  const cleanEmail=email.trim().toLowerCase();
+
+  // try to save to Supabase if available, but don't block on it
+  const db=getSupabase();
+  if(db && loginMode!=='load'){
+    try{ await saveFirstListToSupabase(cleanEmail); }catch(e){}
+  }
+
+  // send Ghost magic link via direct API
+  try{
+    await sendGhostMagicLink(cleanEmail,loginMode);
+    msg.textContent='✓ check your email — magic link sent to '+cleanEmail;
+    msg.style.color='var(--accent)';
+    // DON'T set currentUserEmail until they click the magic link
+    // Just remember the email they entered for next time
+    try{ localStorage.setItem('thoftly_pending_email', cleanEmail); }catch(e){}
+    if(pendingSecondList&&loginMode!=='load'){
+      pendingSecondList=false;
+    }
+  }catch(e){
+    msg.textContent='could not send magic link — try again';
+    msg.style.color='var(--red)';
+    console.error('Magic link error:',e);
+  }
+}
+
+// SAFE JSON PARSER — handles apostrophes, smart quotes, extra text
+function safeParseJSON(text, topic){
+  // step 1: clean up
+  let t = text.replace(/```json|```/g,'').trim();
+  // replace smart/curly quotes
+  t = t.replace(/[‘’`]/g, "'").replace(/[“”]/g, '"');
+  // remove any text before first { and after last }
+  const start = t.indexOf('{');
+  const end = t.lastIndexOf('}');
+  if(start === -1 || end === -1) return buildFallback(topic);
+  t = t.substring(start, end+1);
+
+  // step 2: try direct parse
+  try{ return JSON.parse(t); } catch(e){}
+
+  // step 3: try fixing common issues
+  try{
+    // fix unescaped apostrophes inside strings
+    let fixed = t.replace(/"([^"]*)'([^"]*)"/g, (m,a,b)=>'"'+a+"\'"+b+'"');
+    return JSON.parse(fixed);
+  } catch(e){}
+
+  // step 4: fallback — build a basic checklist from any text we got
+  console.warn('JSON parse failed, using fallback. Raw:', t.substring(0,200));
+  return buildFallback(topic);
+}
+
+function buildFallback(topic){
+  return {
+    title: topic.toLowerCase().replace(/^(start|starting|a|an|the)\s+/i,'').substring(0,40),
+    tagline: 'a gentle place to begin',
+    needs_more_info: false,
+    sections:[{
+      name:'getting started',
+      items:[
+        'take 5 minutes to write down what you already know',
+        'identify the single first thing you need to do',
+        'set aside 20 minutes today to take that first step',
+        'write down one question you need to answer first'
+      ]
+    },{
+      name:'keep going',
+      items:[
+        'check in with yourself after each step',
+        'celebrate small progress — it counts',
+        'adjust your plan as you learn more'
+      ]
+    }]
+  };
+}
+
+// INLINE CLARIFYING QUESTIONS
+function showInlineQuestions(topic, questions){
+  const col2=getCol2();
+  const ex=col2.querySelector('.cl-card');if(ex)ex.remove();
+  const em=col2.querySelector('.ws-empty');if(em)em.remove();
+  if(!window._displayPrompt) window._displayPrompt=topic;
+
+  const qHtml=questions.map((q,i)=>`
+    <div style="margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">${q}</div>
+      <input class="begin-in" id="cq-${i}" style="width:100%;font-size:12px;" placeholder="your answer…">
+    </div>`).join('');
+
+  const div=document.createElement('div');
+  div.className='cl-card';
+  div.innerHTML=`
+    <div class="cl-hd">
+      <div><div class="cl-tagline">optional details can help</div><div class="cl-title" style="font-size:14px;">make it more specific</div></div>
+      <div class="cl-acts"><button class="btn-clr" onclick="clearWs()">✕</button></div>
+    </div>
+    <div class="cl-body">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-style:italic;">you said: "${topic}"</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6;">answer any that feel useful, or skip them and get a simple list now.</div>
+      ${qHtml}
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+        <button class="btn-begin" id="submit-cq-btn" style="width:100%;">done with info — build my checklist →</button>
+        <button id="build-anyway-btn" style="width:100%;background:var(--accent-pale);border:1px solid var(--accent);border-radius:8px;padding:7px;font-size:11px;font-family:inherit;color:var(--accent);cursor:pointer;">skip questions — build a simple list</button>
+        <button id="ask-more-btn" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;padding:7px;font-size:11px;font-family:inherit;color:var(--muted);cursor:pointer;">ask me more questions</button>
+      </div>
+    </div>`;
+  col2.insertBefore(div, col2.firstChild);
+  const btn=col2.querySelector('#submit-cq-btn');
+  btn._topic=topic;
+  btn._count=questions.length;
+  btn.addEventListener('click',()=>submitInlineQuestions(btn._topic, btn._count, false));
+  const buildAnywayBtn=col2.querySelector('#build-anyway-btn');
+  buildAnywayBtn._topic=topic;
+  buildAnywayBtn.addEventListener('click',()=>generateWithoutMoreInfo(buildAnywayBtn._topic));
+  const moreBtn=col2.querySelector('#ask-more-btn');
+  moreBtn._topic=topic;
+  moreBtn._count=questions.length;
+  moreBtn.addEventListener('click',()=>submitInlineQuestions(moreBtn._topic, moreBtn._count, true));
+}
+
+function generateWithoutMoreInfo(topic){
+  if(!window._displayPrompt) window._displayPrompt=topic;
+  window._currentPrompt=topic;
+  activeList=null;
+  const col2=getCol2();
+  const card=col2.querySelector('.cl-card');if(card)card.remove();
+  showLoading(topic);
+  showKnowLoading();
+  genKnow(topic);
+  genChecklistClarified(topic);
+}
+
+function submitInlineQuestions(topic, count, askMore){
+  const answers=[];
+  for(let i=0;i<count;i++){
+    const el=document.getElementById('cq-'+i);
+    if(el&&el.value.trim()) answers.push(el.value.trim());
+  }
+  const enhanced=topic+(answers.length?' — '+answers.join('. '):'');
+  if(!window._displayPrompt) window._displayPrompt=topic;
+  window._currentPrompt=enhanced;
+  activeList=null;
+  const col2=getCol2();
+  const card=col2.querySelector('.cl-card');if(card)card.remove();
+
+  if(askMore){
+    // ask another round of questions using current answers as context
+    showLoading('getting more specific…');
+    fetch('/api/claude',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:600,
+        messages:[{role:'user',content:`Someone wants to: "${enhanced}"
+
+Ask 2-3 more clarifying questions that would help you give them an even better checklist. Go deeper based on what they have already told you. Use your judgment about what would be most useful to know.
+
+Return ONLY valid JSON, double quotes, no apostrophes:
+{"clarifying_questions":["question 1","question 2","question 3"]}`}]})
+    }).then(r=>r.json()).then(data=>{
+      const text=data.content.map(i=>i.text||'').join('').trim();
+      const parsed=safeParseJSON(text, enhanced);
+      const ld=document.getElementById('cl-ld');if(ld)ld.remove();
+      if(parsed&&parsed.clarifying_questions&&parsed.clarifying_questions.length){
+        showInlineQuestions(enhanced, parsed.clarifying_questions);
+      } else {
+        genChecklistClarified(enhanced);
+      }
+    }).catch(()=>genChecklistClarified(enhanced));
+  } else {
+    showLoading(enhanced);
+    showKnowLoading();
+    genKnow(enhanced);
+    genChecklistClarified(enhanced);
+  }
+}
+
+// CLARIFY
+function showClarify(){ document.getElementById('clarify-modal').classList.add('open'); }
+function closeClarify(){ document.getElementById('clarify-modal').classList.remove('open'); }
+function submitClarify(){
+  const type=document.getElementById('cl-type').value.trim();
+  const state=document.getElementById('cl-state').value.trim();
+  const budget=document.getElementById('cl-budget').value.trim();
+  const base=window._currentPrompt||'start a business';
+  if(!window._displayPrompt) window._displayPrompt=base;
+  let enhanced=base;
+  if(type) enhanced+=` — specifically a ${type}`;
+  if(state) enhanced+=` in ${state}`;
+  if(budget) enhanced+=` with a budget of ${budget}`;
+  closeClarify();
+  window._currentPrompt=enhanced;
+  activeList=null;
+  showLoading(enhanced);
+  showKnowLoading();
+  genKnow(enhanced);
+  genChecklistClarified(enhanced);
+}
+async function genChecklistClarified(topic){
+  document.getElementById('begin-btn').disabled=true;
+  try{
+    const res=await fetch('/api/claude',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1500,
+        messages:[{role:'user',content:`Create a specific, actionable checklist for: "${topic}"
+
+Return ONLY valid JSON, double quotes only, no apostrophes in values:
+{"title":"specific lowercase title","tagline":"encouraging phrase","_clarified":true,"facts":["fact 1","fact 2","fact 3","fact 4"],"sections":[{"name":"section name","items":["specific step"]}]}
+
+facts = 4 short reassuring things to know before starting, under 12 words each, lowercase.`}]})
+    });
+    if(!res.ok){const t=await res.text();throw new Error(res.status+': '+t);}
+    const data=await res.json();
+    const text=data.content.map(i=>i.text||'').join('').trim();
+    const parsed = safeParseJSON(text, topic);
+    if(!parsed.sections)parsed.sections=[{name:'steps',items:['take one step']}];
+    activeList={title:parsed.title,topic,data:parsed};
+    const ld=document.getElementById('cl-ld');if(ld)ld.remove();
+    renderChecklist(parsed,false);
+    if(parsed.facts && parsed.facts.length) renderKnow(parsed.facts);
+  }catch(e){
+    const col2=getCol2();
+    const ld=document.getElementById('cl-ld');if(ld)ld.remove();
+    const d=document.createElement('div');
+    d.style.cssText='padding:20px;font-size:11px;color:#b85c4a;';
+    d.textContent='error: '+e.message;
+    col2.insertBefore(d,col2.firstChild);
+  }
+  document.getElementById('begin-btn').disabled=false;
+}
+
+// GO DEEPER — appends new sections to existing list
+function goDeeper(btn){
+  if(!window._currentPrompt)return;
+  const col2=getCol2();
+  const clCard=col2.querySelector('.cl-card');
+  if(!clCard)return;
+
+  // get existing steps to guide the deeper list
+  const existingSteps=Array.from(clCard.querySelectorAll('.i-txt')).map(el=>el.textContent).join(', ');
+
+  if(btn){btn.textContent='adding more steps…';btn.disabled=true;}
+
+  fetch('/api/claude',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,
+      messages:[{role:'user',content:`Someone is working on: "${window._currentPrompt}"
+
+They have already completed or planned these steps:
+${existingSteps}
+
+Now add 1-2 new sections that go deeper — more specific, more advanced, next-level steps that naturally follow what they have. Be concrete and useful. Do not repeat anything already listed.
+
+Return ONLY valid JSON, double quotes, no apostrophes:
+{"sections":[{"name":"section name","items":["specific next step","specific next step"]}]}`}]})
+  }).then(r=>r.json()).then(data=>{
+    const text=data.content.map(i=>i.text||'').join('').trim();
+    let parsed;
+    try{ parsed=JSON.parse(text); }
+    catch(e){
+      const start=text.indexOf('{'); const end=text.lastIndexOf('}');
+      if(start!==-1&&end!==-1){ try{ parsed=JSON.parse(text.substring(start,end+1)); }catch(e2){} }
+    }
+    if(parsed&&parsed.sections){
+      const clBody=clCard.querySelector('.cl-body');
+      const deeperBtn=clCard.querySelector('#go-deeper-btn');
+      const bottomBtns=deeperBtn?deeperBtn.closest('div[style*="flex-direction:column"]'):null;
+      parsed.sections.forEach(sec=>{
+        const newSec=document.createElement('div');
+        newSec.className='cl-sec';
+        newSec.innerHTML=`<div class="cl-sec-hdr"><div class="sec-ck" onclick="this.classList.toggle('done')"></div><div class="sec-nm">${sec.name}</div></div>
+          <div class="cl-items">
+            ${sec.items.map(item=>`<div class="cl-item"><div class="i-ck" onclick="toggleItemByBox(this)"></div><span class="i-txt" contenteditable="true">${item}</span><button class="i-del" onclick="this.closest('.cl-item').remove()">×</button></div>`).join('')}
+            <div class="add-row"><input class="add-in" placeholder="+ add a step…" onkeydown="addStep(event,this)"><button class="add-btn" onclick="addStepBtn(this)">+</button></div>
+          </div>`;
+        if(bottomBtns) clBody.insertBefore(newSec, bottomBtns);
+        else clBody.appendChild(newSec);
+      });
+    }
+    if(btn){btn.textContent='↑ go deeper — add more steps';btn.disabled=false;}
+  }).catch(()=>{if(btn){btn.textContent='↑ go deeper — add more steps';btn.disabled=false;}});
+}
+
+// ADD MORE STEPS to existing list
+function addSectionToList(btn){
+  const body=btn.closest('.cl-body');
+  const secName=prompt('Section name (e.g. "next steps", "week 2"):');
+  if(!secName)return;
+  const newSec=document.createElement('div');
+  newSec.className='cl-sec';
+  newSec.innerHTML=`<div class="cl-sec-hdr"><div class="sec-ck" onclick="this.classList.toggle('done')"></div><div class="sec-nm">${secName}</div></div>
+    <div class="cl-items">
+      <div class="add-row"><input class="add-in" placeholder="+ add a step…" onkeydown="addStep(event,this)"><button class="add-btn" onclick="addStepBtn(this)">+</button></div>
+    </div>`;
+  body.insertBefore(newSec, btn);
+}
+
+// ASK MORE QUESTIONS FROM BOTTOM OF LIST
+function askMoreFromList(btn){
+  const col2=getCol2();
+  const clCard=col2.querySelector('.cl-card');
+  const existingSteps=clCard?Array.from(clCard.querySelectorAll('.i-txt')).map(el=>el.textContent).join(', '):'';
+  const topic=window._currentPrompt||'';
+  if(btn){btn.textContent='thinking of questions…';btn.disabled=true;}
+  fetch('/api/claude',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:400,
+      messages:[{role:'user',content:`Someone is working on: "${topic}". They have these steps so far: ${existingSteps}. Ask 2-3 targeted follow-up questions that would help make their checklist even more specific and useful. Return ONLY valid JSON, double quotes, no apostrophes: {"clarifying_questions":["question 1","question 2","question 3"]}`}]})
+  }).then(r=>r.json()).then(data=>{
+    const text=data.content.map(i=>i.text||'').join('').trim();
+    let parsed;
+    try{ parsed=JSON.parse(text); }
+    catch(e){ const s=text.indexOf('{');const e2=text.lastIndexOf('}');if(s!==-1&&e2!==-1)try{parsed=JSON.parse(text.substring(s,e2+1));}catch(e3){} }
+    if(btn){btn.textContent='ask me more questions';btn.disabled=false;}
+    if(parsed&&parsed.clarifying_questions&&parsed.clarifying_questions.length){
+      // remove current card and show questions
+      if(clCard)clCard.remove();
+      showInlineQuestions(topic, parsed.clarifying_questions);
+    }
+  }).catch(()=>{if(btn){btn.textContent='ask me more questions';btn.disabled=false;}});
+}
+
+// START SMALLER / GO DEEPER for extra columns
+function doSmallerInCol(btn, colId){
+  const col=document.getElementById(colId);
+  if(!col)return;
+  const inputEl=document.getElementById('begin-in-'+colId);
+  const topic=(inputEl?inputEl.value.trim():'')||'start something';
+  const smaller=topic+' — just the very first tiny step, break it down even smaller';
+  if(inputEl)inputEl.value=smaller;
+  doBeginInCol(colId);
+}
+
+function goDeeperInCol(btn, colId){
+  const col=document.getElementById(colId);
+  if(!col)return;
+  const clCard=Array.from(col.querySelectorAll('.cl-card')).find(c=>!c.querySelector('.begin-row'));
+  if(!clCard)return;
+  const existingSteps=Array.from(clCard.querySelectorAll('.i-txt')).map(el=>el.textContent).join(', ');
+  const inputEl=document.getElementById('begin-in-'+colId);
+  const topic=inputEl?inputEl.value.trim():'';
+  if(btn){btn.textContent='adding more steps…';btn.disabled=true;}
+  fetch('/api/claude',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:800,
+      messages:[{role:'user',content:`Someone is working on: "${topic}". They have: ${existingSteps}. Add 1-2 new sections with deeper steps building on what they have. No repeats. Return ONLY JSON, double quotes, no apostrophes: {"sections":[{"name":"section name","items":["step"]}]}`}]})
+  }).then(r=>r.json()).then(data=>{
+    const text=data.content.map(i=>i.text||'').join('').trim();
+    const parsed=safeParseJSON(text,topic);
+    if(parsed&&parsed.sections){
+      const clBody=clCard.querySelector('.cl-body');
+      const deeperBtn=clCard.querySelector('button[onclick*="goDeeperInCol"]');
+      parsed.sections.forEach(sec=>{
+        const newSec=document.createElement('div');
+        newSec.className='cl-sec';
+        newSec.innerHTML=`<div class="cl-sec-hdr"><div class="sec-ck" onclick="this.classList.toggle('done')"></div><div class="sec-nm">${sec.name}</div></div>
+          <div class="cl-items">
+            ${sec.items.map(item=>`<div class="cl-item"><div class="i-ck" onclick="toggleItemByBox(this)"></div><span class="i-txt" contenteditable="true">${item}</span><button class="i-del" onclick="this.closest('.cl-item').remove()">×</button></div>`).join('')}
+            <div class="add-row"><input class="add-in" placeholder="+ add a step…" onkeydown="addStep(event,this)"><button class="add-btn" onclick="addStepBtn(this)">+</button></div>
+          </div>`;
+        if(deeperBtn) clBody.insertBefore(newSec, deeperBtn.parentElement||deeperBtn);
+        else clBody.appendChild(newSec);
+      });
+    }
+    if(btn){btn.textContent='↑ go deeper — add more steps';btn.disabled=false;}
+  }).catch(()=>{if(btn){btn.textContent='↑ go deeper — add more steps';btn.disabled=false;}});
+}
+
+// TO-DO LIST
+let todos = [];
+function addTodo(){
+  const input = document.getElementById('todo-input');
+  const val = input.value.trim();
+  if(!val) return;
+  todos.push({text:val, done:false});
+  input.value = '';
+  renderTodos();
+}
+function renderTodos(){
+  const list = document.getElementById('todo-list');
+  list.innerHTML = '';
+  todos.forEach((t, i) => {
+    const d = document.createElement('div');
+    d.className = 'todo-item';
+    const cb = document.createElement('div');
+    cb.className = 'todo-cb' + (t.done ? ' done' : '');
+    cb.addEventListener('click', () => { todos[i].done = !todos[i].done; renderTodos(); });
+    const txt = document.createElement('span');
+    txt.className = 'todo-text' + (t.done ? ' done' : '');
+    txt.textContent = t.text;
+    const del = document.createElement('button');
+    del.className = 'todo-del';
+    del.textContent = '×';
+    del.dataset.idx = i;
+    del.addEventListener('click', function(){ todos.splice(parseInt(this.dataset.idx),1); renderTodos(); });
+    d.appendChild(cb); d.appendChild(txt); d.appendChild(del);
+    list.appendChild(d);
+  });
+}
+document.addEventListener("DOMContentLoaded",()=>{renderTodos();});
+
+// DRAG AND DROP WIDGETS — works on both desktop and mobile touch
+let dragSrc = null;
+let touchDragEl = null;
+let touchClone = null;
+
+function dragStart(e){
+  dragSrc = e.currentTarget;
+  dragSrc.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function dragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+function dragDrop(e){
+  e.preventDefault();
+  const target = e.currentTarget;
+  if(dragSrc && target !== dragSrc){
+    const parent = target.parentNode;
+    const srcNext = dragSrc.nextSibling;
+    const tgtNext = target.nextSibling;
+    parent.insertBefore(dragSrc, tgtNext);
+    parent.insertBefore(target, srcNext);
+  }
+  if(dragSrc) dragSrc.classList.remove('dragging');
+  dragSrc = null;
+}
+document.addEventListener('dragend', () => {
+  document.querySelectorAll('.card.dragging').forEach(c => c.classList.remove('dragging'));
+});
+
+// Touch drag
+function initTouchDrag(card){
+  const handle = card.querySelector('.drag-handle');
+  if(!handle) return;
+  handle.addEventListener('touchstart', e => {
+    touchDragEl = card;
+    card.classList.add('dragging');
+    e.preventDefault();
+  },{passive:false});
+}
+document.addEventListener('touchmove', e => {
+  if(!touchDragEl) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const target = document.elementFromPoint(touch.clientX, touch.clientY);
+  const overCard = target && target.closest ? target.closest('.card[draggable]') : null;
+  if(overCard && overCard !== touchDragEl){
+    const parent = touchDragEl.parentNode;
+    if(parent === overCard.parentNode){
+      const cards = [...parent.children].filter(c=>c.classList.contains('card'));
+      const srcIdx = cards.indexOf(touchDragEl);
+      const tgtIdx = cards.indexOf(overCard);
+      if(srcIdx > tgtIdx) parent.insertBefore(touchDragEl, overCard);
+      else parent.insertBefore(touchDragEl, overCard.nextSibling);
+    }
+  }
+},{passive:false});
+document.addEventListener('touchend', () => {
+  if(touchDragEl){ touchDragEl.classList.remove('dragging'); touchDragEl = null; }
+});
+
+// init touch drag on all existing cards
+document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll('.card[draggable]').forEach(initTouchDrag);});
+
+// ADD WIDGET
+function addWidget(){ document.getElementById('widget-picker').classList.add('open'); }
+function closeWidgetPicker(){ document.getElementById('widget-picker').classList.remove('open'); }
+
+let widgetCount = 0;
+function addWidgetType(type){
+  closeWidgetPicker();
+  widgetCount++;
+  const id = 'w-custom-' + widgetCount;
+  const col3 = document.getElementById('col3');
+  const addBtn = col3.querySelector('.btn-add-widget');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = id;
+  card.draggable = true;
+  card.ondragstart = dragStart;
+  card.ondragover = dragOver;
+  card.ondrop = dragDrop;
+  const templates = {
+    notes:{ label:'notes', sub:'jot anything', body:`<textarea class="me-ta" rows="4" placeholder="write something…" style="width:100%;" oninput="autoGrow(this)"></textarea>` },
+    todo:{ label:'to do', sub:'another list', body:`<div class="todo-list-extra-${id}" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;"></div><div style="display:flex;gap:5px;"><input class="b-in" id="tei-${id}" placeholder="add a task…" style="flex:1;" onkeydown="if(event.key==='Enter')addExtraTodo('${id}')"><button class="btn-add-sm" onclick="addExtraTodo('${id}')">add</button></div>` },
+    countdown:{ label:'countdown', sub:'days until…', body:`<input type="text" class="b-in" id="cdl-${id}" placeholder="event name" style="width:100%;margin-bottom:4px;" oninput="updateCD('${id}')"><input type="datetime-local" class="b-in" id="cdd-${id}" style="width:100%;margin-bottom:8px;" oninput="updateCD('${id}')"><div id="cdv-${id}" style="font-size:24px;font-weight:300;text-align:center;padding:6px 0;">—</div><div id="cdn-${id}" style="font-size:10px;color:var(--muted);text-align:center;">until your event</div>` },
+    links:{ label:'links', sub:'shortcuts', body:`<div id="pll-${id}" class="places-list" style="margin-bottom:6px;"></div><div class="pl-add"><input class="pl-in" id="pln-${id}" placeholder="name"><input class="pl-in pl-in-url" id="plu-${id}" placeholder="url"><button class="btn-add-sm" onclick="addCP('${id}')">add</button></div>` },
+    reminder:{ label:'reminder', sub:'something to remember', body:`<div contenteditable="true" class="me-ta" style="min-height:60px;outline:none;">you are doing better than you think.</div>` }
+  };
+  const t = templates[type]||templates.notes;
+  card.innerHTML = `<div class="card-hd"><div><div class="card-lbl">${t.label}</div><div class="card-sub">${t.sub}</div></div><div class="wctrl"><span class="drag-handle">⠿</span><button class="wbtn" onclick="toggleMin('${id}',this)">−</button><button class="wbtn" onclick="this.closest('.card').remove()" style="font-size:11px;color:var(--red);">×</button></div></div><div class="card-bd">${t.body}</div>`;
+  col3.insertBefore(card, addBtn);
+  initTouchDrag(card);
+}
+function addExtraTodo(id){
+  const input = document.getElementById('tei-'+id);
+  const val = input.value.trim(); if(!val) return;
+  const list = document.querySelector('.todo-list-extra-'+id);
+  const d = document.createElement('div'); d.className = 'todo-item';
+  const cb = document.createElement('div'); cb.className = 'todo-cb';
+  cb.addEventListener('click',()=>{ cb.classList.toggle('done'); txt.classList.toggle('done'); });
+  const txt = document.createElement('span'); txt.className='todo-text'; txt.textContent=val;
+  const del = document.createElement('button'); del.className='todo-del'; del.textContent='×';
+  del.addEventListener('click',()=>d.remove());
+  d.appendChild(cb); d.appendChild(txt); d.appendChild(del);
+  list.appendChild(d); input.value='';
+}
+function updateCD(id){
+  const dInput=document.getElementById('cdd-'+id);
+  const lInput=document.getElementById('cdl-'+id);
+  const valEl=document.getElementById('cdv-'+id);
+  const labEl=document.getElementById('cdn-'+id);
+  if(!dInput||!valEl||!labEl) return;
+  const d=dInput.value;
+  const l=(lInput?lInput.value:'').trim();
+  if(!d){
+    valEl.textContent='—';
+    labEl.textContent= l ? ('until '+l) : 'until your event';
+    return;
+  }
+  const target=new Date(d);
+  const now=new Date();
+  let diffMs=target-now;
+  // Past event
+  if(diffMs<=0){
+    valEl.textContent='✓';
+    labEl.textContent= l ? (l+' has passed') : 'event has passed';
+    return;
+  }
+  const totalMin=Math.floor(diffMs/60000);
+  const totalHours=Math.floor(diffMs/3600000);
+  const totalDays=Math.floor(diffMs/86400000);
+  const remHours=totalHours - totalDays*24;
+  const remMin=totalMin - totalHours*60;
+  let valStr, unitStr;
+  if(totalDays>=1){
+    // Days, with hours when close-ish (under 14 days)
+    if(totalDays<14 && remHours>0){
+      valStr=totalDays+'d '+remHours+'h';
+    } else {
+      valStr=totalDays;
+      unitStr=totalDays===1?'day':'days';
+    }
+  } else if(totalHours>=1){
+    // Hours, with minutes when under 6h
+    if(totalHours<6 && remMin>0){
+      valStr=totalHours+'h '+remMin+'m';
+    } else {
+      valStr=totalHours;
+      unitStr=totalHours===1?'hour':'hours';
+    }
+  } else if(totalMin>=1){
+    valStr=totalMin;
+    unitStr=totalMin===1?'minute':'minutes';
+  } else {
+    valStr='now';
+  }
+  valEl.textContent=valStr;
+  // Build the label
+  const eventLabel = l ? ('until '+l) : 'until your event';
+  if(unitStr){
+    labEl.textContent=unitStr+' '+eventLabel;
+  } else {
+    labEl.textContent=eventLabel;
+  }
+}
+function addCP(id){
+  const n=document.getElementById('pln-'+id).value.trim();
+  let u=document.getElementById('plu-'+id).value.trim();
+  if(!n)return; if(u&&!u.startsWith('http'))u='https://'+u;
+  const list=document.getElementById('pll-'+id);
+  const row=document.createElement('div'); row.className='pl-row';
+  row.innerHTML=`<div class="pl-ico">${n[0]}</div><a class="pl-nm" href="${u||'#'}" target="_blank">${n}</a><button class="pl-rm" onclick="this.closest('.pl-row').remove()">×</button>`;
+  list.appendChild(row);
+  document.getElementById('pln-'+id).value=''; document.getElementById('plu-'+id).value='';
+}
+// ── LOCAL STORAGE PERSISTENCE ──────────────────────
+function saveToLocal(){
+  if(applyingRemoteWidgetUpdate) return;
+  try{
+    const data={
+      bills: bills,
+      places: places,
+      todos: todos,
+      meText: document.querySelector('.me-ta')?document.querySelector('.me-ta').value:'',
+      meName: document.getElementById('me-nm')?document.getElementById('me-nm').textContent:'',
+      balInput: document.getElementById('b-bal-input')?document.getElementById('b-bal-input').value:'',
+      wxLoc: document.getElementById('wx-loc')?document.getElementById('wx-loc').textContent:'',
+      wxTemp: document.getElementById('wx-temp')?document.getElementById('wx-temp').textContent:'',
+      wxDesc: document.getElementById('wx-desc')?document.getElementById('wx-desc').textContent:'',
+      wxIcon: document.getElementById('wx-icon')?document.getElementById('wx-icon').textContent:'',
+      wxForecast: document.getElementById('wx-fc')?document.getElementById('wx-fc').innerHTML:'',
+      generatedList: collectGeneratedList(),
+      widgetData: collectWidgetData(),
+    };
+    localStorage.setItem('thoftly_data', JSON.stringify(data));
+  }catch(e){}
+}
+
+function applyStoredData(data,opts){
+  opts=opts||{};
+  // Legacy demo values to treat as empty (so existing users see fresh prompts)
+  const LEGACY_DEMO_NAME='Katie';
+  const LEGACY_DEMO_TEXT='still thoughts, start softly. small steps count.';
+  // detect legacy demo bills set
+  const isLegacyDemoBills=(arr)=>{
+    if(!arr || arr.length!==3) return false;
+    const names=arr.map(b=>(b.name||'').toLowerCase()).sort().join(',');
+    return names==='electric,internet,rent';
+  };
+  if(data.bills&&data.bills.length&&!isLegacyDemoBills(data.bills)){bills=data.bills;renderBills();}
+  if(data.places&&data.places.length){places=data.places;renderPlaces();}
+  if(data.todos&&data.todos.length){todos=data.todos;renderTodos();}
+  if(data.meText && data.meText.trim() !== LEGACY_DEMO_TEXT){const ta=document.querySelector('.me-ta');if(ta){ta.value=data.meText;autoGrow(ta);}}
+  if(data.meName && data.meName.trim() !== LEGACY_DEMO_NAME){const nm=document.getElementById('me-nm');if(nm)nm.textContent=data.meName;}
+  if(data.balInput){const bi=document.getElementById('b-bal-input');if(bi){bi.value=data.balInput;updateBillAfter();}}
+  if(data.wxLoc){const el=document.getElementById('wx-loc');if(el)el.textContent=data.wxLoc;}
+  if(data.wxTemp){const el=document.getElementById('wx-temp');if(el)el.textContent=data.wxTemp;}
+  if(data.wxDesc){const el=document.getElementById('wx-desc');if(el)el.textContent=data.wxDesc;}
+  if(data.wxIcon){const el=document.getElementById('wx-icon');if(el)el.textContent=data.wxIcon;}
+  if(data.wxForecast){const el=document.getElementById('wx-fc');if(el)el.innerHTML=data.wxForecast;}
+  const wd=data.widgetData;
+  if(wd){
+    if(wd.billDraft){
+      const n=document.getElementById('b-name');if(n)n.value=wd.billDraft.name||'';
+      const a=document.getElementById('b-amt');if(a)a.value=wd.billDraft.amount||'';
+    }
+    if(wd.todoDraft!==undefined){const t=document.getElementById('todo-input');if(t)t.value=wd.todoDraft||'';}
+    if(wd.placeDraft){
+      const pn=document.getElementById('pl-name');if(pn)pn.value=wd.placeDraft.name||'';
+      const pu=document.getElementById('pl-url');if(pu)pu.value=wd.placeDraft.url||'';
+    }
+    if(wd.weather&&wd.weather.searchInput!==undefined){
+      const wi=document.getElementById('wx-loc-in');if(wi)wi.value=wd.weather.searchInput||'';
+    }
+    if(wd.customWidgets){
+      wd.customWidgets.forEach(widget=>{
+        const card=document.getElementById(widget.id);
+        if(!card) return;
+        card.classList.toggle('min',!!widget.minimized);
+        (widget.fields||[]).forEach(field=>{
+          if(!field.id) return;
+          const el=document.getElementById(field.id);
+          if(!el) return;
+          if(el.value!==undefined) el.value=field.value||'';
+          else el.textContent=field.value||'';
+        });
+      });
+    }
+  }
+  if(!opts.skipList&&data.generatedList) restoreGeneratedList(data.generatedList);
+}
+
+function loadFromLocal(){
+  try{
+    const raw=localStorage.getItem('thoftly_data');
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    applyStoredData(data);
+  }catch(e){}
+}
+
+// Auto-save every 30 seconds and on any input change
+setInterval(saveToLocal, 30000);
+document.addEventListener('change', saveToLocal);
+document.addEventListener('input', saveToLocal);
+document.addEventListener('change', scheduleLiveSave);
+document.addEventListener('input', scheduleLiveSave);
+document.addEventListener('click', ()=>{
+  saveToLocal();
+  scheduleLiveSave();
+});
+window.addEventListener('storage', e=>{
+  if(e.key==='thoftly_clear_main_list_at'&&e.newValue){
+    clearWsFromOtherTab();
+  }
+  if(e.key==='thoftly_data'&&e.newValue){
+    try{
+      const data=JSON.parse(e.newValue);
+      applyingRemoteWidgetUpdate=true;
+      applyStoredData(data,{skipList:true});
+      applyingRemoteWidgetUpdate=false;
+      if(data.generatedList&&listSnapshot(data.generatedList)!==listSnapshot(collectGeneratedList())){
+        applyingRemoteListUpdate=true;
+        restoreGeneratedList(data.generatedList);
+        applyingRemoteListUpdate=false;
+      }
+    }catch(err){
+      applyingRemoteWidgetUpdate=false;
+      applyingRemoteListUpdate=false;
+    }
+  }
+});
+
+// Load on startup
+document.addEventListener('DOMContentLoaded', loadFromLocal);
+</script>
+</body>
+</html>
