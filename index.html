@@ -1241,19 +1241,52 @@ window.addEventListener('message', async (event) => {
     const isPaid = !!data.isPaid;
     try { localStorage.setItem('thoftly_is_paid', isPaid ? '1' : '0'); } catch(e){}
     window.thoftlyIsPaid = isPaid;
-    // Skip data reload if already logged in as this user
+    // Check who's currently displayed
     const localEmail = (localStorage.getItem('thoftly_email')||'').trim().toLowerCase();
-    if (email === localEmail && currentUserEmail === email) {
+    const effectiveLocalEmail = (currentUserEmail || localEmail || '').trim().toLowerCase();
+    // Skip everything if already showing this user
+    if (email === effectiveLocalEmail && currentUserEmail === email) {
       refreshAuthUI();
       return;
     }
+    // DIFFERENT USER detected (or fresh login): wipe everything first so we don't show stale data
+    if (effectiveLocalEmail && effectiveLocalEmail !== email) {
+      console.log('[thoftly] Different user detected, clearing previous user data');
+      // Clear local cache for previous user
+      localStorage.removeItem('thoftly_data');
+      localStorage.removeItem('thoftly_main_list_exists');
+      // Clear DOM: remove any added workspace columns beyond col 1
+      document.querySelectorAll('.workspace-col').forEach((col, idx) => {
+        if (idx > 0 && col.id !== 'ws-col-1') col.remove();
+      });
+      // Reset wsColCount if defined
+      if (typeof wsColCount !== 'undefined') {
+        try { wsColCount = 1; } catch(e){}
+      }
+      // Clear col 1 checklist
+      const col1 = document.getElementById('ws-col-1');
+      if (col1) {
+        const checklistCard = Array.from(col1.querySelectorAll('.cl-card')).find(c => c.querySelector('.cl-title'));
+        if (checklistCard) checklistCard.remove();
+      }
+      // Clear widgets to fresh state
+      const meName = document.getElementById('me-nm');
+      if (meName) meName.textContent = '';
+      const meTa = document.querySelector('.me-ta');
+      if (meTa) meTa.value = '';
+      if (typeof bills !== 'undefined') { bills = []; if (typeof renderBills==='function') renderBills(); }
+      if (typeof todos !== 'undefined') { todos = []; if (typeof renderTodos==='function') renderTodos(); }
+      // Note: we DON'T clear places (those are useful default shortcuts), 
+      // but they'll get overwritten by loadSavedStartFromSupabase if the new user has any
+    }
+    // Set new user
+    currentUserEmail = email;
+    localStorage.setItem('thoftly_email', email);
     try {
       await loadSavedStartFromSupabase(email);
       console.log('[thoftly] Loaded data for', email, '— paid:', isPaid);
     } catch(e) {
-      // No saved data yet — just record the email so future saves work
-      currentUserEmail = email;
-      localStorage.setItem('thoftly_email', email);
+      // No saved data yet for this user — keep the clean slate
       console.log('[thoftly] Logged in as', email, '(no saved data yet) — paid:', isPaid);
     }
     refreshAuthUI();
