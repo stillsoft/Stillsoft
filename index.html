@@ -993,12 +993,12 @@ async function saveFirstListToSupabase(email,opts){
   const widgetData=collectWidgetData();
   const allLists = collectAllGeneratedLists();
 
-  // Upsert user (don't touch is_paid — Ghost is the source of truth for that)
-  // We use a separate upsert that doesn't include is_paid so we don't overwrite it
+  // Upsert user (don't touch tier — Ghost webhook is the source of truth for that)
+  // We use a separate upsert that doesn't include tier so we don't overwrite it
   const userExists = await db.from('users').select('id').eq('email', cleanEmail).maybeSingle();
   if (userExists.error && userExists.error.code !== 'PGRST116') throw userExists.error;
   if (!userExists.data) {
-    const userRes = await db.from('users').insert({ email: cleanEmail, is_paid: false });
+    const userRes = await db.from('users').insert({ email: cleanEmail, tier: 'free' });
     if (userRes.error) throw userRes.error;
   }
 
