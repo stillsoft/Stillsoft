@@ -1351,14 +1351,11 @@ function refreshAddColLabel(){
   const label = document.getElementById('add-col-label');
   if (!label) return;
   const cols = document.querySelectorAll('.workspace-col').length;
-  const isPaid = !!window.thoftlyIsPaid;
-  if (isPaid) {
-    // Paid users get unlimited lists
+  const tier = window.thoftlyTier || 'free';
+  if (tier === 'unlimited' || cols > 1) {
     label.textContent = 'another start';
-  } else if (cols === 0 || cols === 1) {
-    label.textContent = 'a 2nd start';
   } else {
-    label.textContent = 'another start';
+    label.textContent = 'a 2nd start';
   }
 }
 
@@ -1371,9 +1368,9 @@ function refreshLoggedOutBanner(){
 
 function doLocalLogout(){
   currentUserEmail = '';
-  window.thoftlyIsPaid = false;
+  window.thoftlyTier = 'free';
   localStorage.removeItem('thoftly_email');
-  localStorage.removeItem('thoftly_is_paid');
+  localStorage.removeItem('thoftly_tier');
   localStorage.removeItem('thoftly_data');
   localStorage.removeItem('thoftly_main_list_exists');
   // Reload to fresh state
