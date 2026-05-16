@@ -1182,28 +1182,23 @@ function showSaveStatus(text, color, persist){
   }
 }
 
-async function canCreateSecondList(){
+async function canAddList(){
   if(!currentUserEmail) return {allowed:false, needsEmail:true};
-  // Ghost is the source of truth for payment status (set via postMessage from parent)
-  let isPaid = false;
-  if (typeof window.thoftlyIsPaid === 'boolean') {
-    isPaid = window.thoftlyIsPaid;
-  } else {
-    try { isPaid = localStorage.getItem('thoftly_is_paid') === '1'; } catch(e){}
-  }
+  let tier = (typeof window.thoftlyTier === 'string') ? window.thoftlyTier : 'free';
+  try { if (tier === 'free') tier = localStorage.getItem('thoftly_tier') || 'free'; } catch(e){}
   const db=getSupabase();
   if(!db) return {allowed:false, error:'Add your Supabase URL and anon key in index.html first.'};
   const email=currentUserEmail.trim().toLowerCase();
-  // Fallback: if we don't have isPaid info from Ghost (e.g. direct visit to app subdomain),
-  // check Supabase users table as a backup
-  if (!isPaid) {
-    const userRes=await db.from('users').select('is_paid').eq('email',email).maybeSingle();
-    if(!userRes.error && userRes.data && userRes.data.is_paid) isPaid = true;
+  // Fallback: check Supabase in case postMessage hasn't fired (e.g. direct visit)
+  if (tier === 'free') {
+    const userRes=await db.from('users').select('tier').eq('email',email).maybeSingle();
+    if(!userRes.error && userRes.data && userRes.data.tier) tier = userRes.data.tier;
   }
   const countRes=await db.from('saved_lists').select('id',{count:'exact',head:true}).eq('user_email',email);
   if(countRes.error) return {allowed:false, error:countRes.error.message};
   const count=countRes.count || 0;
-  return {allowed:isPaid || count<1, isPaid:isPaid, count:count};
+  const limit = tier === 'unlimited' ? Infinity : tier === 'basic' ? 2 : 1;
+  return {allowed:count < limit, tier:tier, count:count};
 }
 
 // SET --vh for mobile browsers (fixes 100vh issues)
