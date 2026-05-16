@@ -8,26 +8,37 @@ const TIER_MAP = {
 };
 
 function mapTier(tierName) {
-  return TIER_MAP[tierName] || 'free';
+  const mapped = TIER_MAP[tierName];
+  if (!mapped && tierName) console.warn('[ghost-webhook] Unknown tier name, defaulting to free:', tierName);
+  return mapped || 'free';
 }
 
 function getRawBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    req.on('data', chunk => {
+      body += chunk;
+      if (body.length > 512000) reject(new Error('Payload too large'));
+    });
     req.on('end', () => resolve(body));
     req.on('error', reject);
   });
 }
 
 async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-ghost-signature');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const secret = process.env.GHOST_WEBHOOK_SECRET;
   if (!secret) return res.status(500).json({ error: 'No webhook secret configured' });
 
-  const rawBody = await getRawBody(req);
+  let rawBody;
+  try { rawBody = await getRawBody(req); } catch (e) {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
 
   const signature = req.headers['x-ghost-signature'] || '';
   const sigMatch = signature.match(/sha256=([a-f0-9]+)/);
