@@ -832,7 +832,7 @@ const SUPABASE_URL = 'https://vnsqorbrcxiesewbhzsb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuc3FvcmJyY3hpZXNld2JoenNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzM3NzAsImV4cCI6MjA5MzQwOTc3MH0.0APBc__Fi3wt4HSj2EbDtrEjmOvCSSiK7Z04c9J9kh4';
 let supabaseClient = null;
 let currentUserEmail = localStorage.getItem('thoftly_email') || '';
-window.thoftlyIsPaid = (function(){ try { return localStorage.getItem('thoftly_is_paid') === '1'; } catch(e){ return false; } })();
+window.thoftlyTier = (function(){ try { return localStorage.getItem('thoftly_tier') || 'free'; } catch(e){ return 'free'; } })();
 let pendingSecondList = false;
 let liveSaveTimer = null;
 let liveSaveInFlight = false;
