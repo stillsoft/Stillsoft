@@ -802,6 +802,7 @@ body{overflow-x:hidden;overflow-y:auto;}
     <div class="m-ey">thoftly · still thoughts, start softly</div>
     <div class="m-ttl">add a 2nd start</div>
     <div class="m-body">a 2nd start requires a paid Ghost subscription.</div>
+    <div id="paywall-basic-section">
     <div style="font-size:10px;color:var(--muted);margin-bottom:10px;font-weight:600;">2nd start</div>
     <div class="m-pricing" style="margin-bottom:10px;">
       <div class="pc sel" id="pc-mo" onclick="selPlan('mo')">
@@ -811,6 +812,8 @@ body{overflow-x:hidden;overflow-y:auto;}
         <div class="pc-amt">$25</div><div class="pc-per">per year</div><div class="pc-note">2 lists · save $11</div>
       </div>
     </div>
+    </div>
+    <div id="paywall-unl-section">
     <div style="font-size:10px;color:var(--muted);margin-bottom:10px;font-weight:600;">unlimited starts</div>
     <div class="m-pricing" style="margin-bottom:12px;">
       <div class="pc" onclick="selPlan('unlmo')">
@@ -819,6 +822,7 @@ body{overflow-x:hidden;overflow-y:auto;}
       <div class="pc" onclick="selPlan('unlyr')">
         <div class="pc-amt">$39</div><div class="pc-per">per year</div><div class="pc-note">unlimited · save $21</div>
       </div>
+    </div>
     </div>
     <button class="btn-up" onclick="openPaidGhostPortal(event);closePaywall();">upgrade to add more starts</button>
     <button class="btn-skip" onclick="closePaywall()">no thanks, i'll start over</button>
@@ -2161,7 +2165,25 @@ function initMobile(){ }
 window.addEventListener('load', initMobile);
 
 // PAYWALL
-function showPaywall(){document.getElementById('paywall').classList.add('open');}
+function showPaywall(currentTier){
+  const tier = currentTier || window.thoftlyTier || 'free';
+  const ttl = document.querySelector('#paywall .m-ttl');
+  const body = document.querySelector('#paywall .m-body');
+  const basicSection = document.getElementById('paywall-basic-section');
+  const unlSection = document.getElementById('paywall-unl-section');
+  if (tier === 'basic') {
+    if (ttl) ttl.textContent = 'add unlimited starts';
+    if (body) body.textContent = "you've reached your 2-list limit. upgrade to unlimited starts.";
+    if (basicSection) basicSection.style.display = 'none';
+    if (unlSection) unlSection.style.display = '';
+  } else {
+    if (ttl) ttl.textContent = 'add a 2nd start';
+    if (body) body.textContent = 'a 2nd start requires a paid Ghost subscription.';
+    if (basicSection) basicSection.style.display = '';
+    if (unlSection) unlSection.style.display = '';
+  }
+  document.getElementById('paywall').classList.add('open');
+}
 function closePaywall(){document.getElementById('paywall').classList.remove('open');}
 function selPlan(p){document.getElementById('pc-mo').classList.toggle('sel',p==='mo');document.getElementById('pc-yr').classList.toggle('sel',p==='yr');}
 
@@ -2306,7 +2328,7 @@ function openPaidGhostPortal(event){
 
 async function handleAddCol(){
   pendingSecondList=true;
-  const result=await canCreateSecondList();
+  const result=await canAddList();
   if(result.allowed){
     pendingSecondList=false;
     addWorkspaceCol(true);
@@ -2321,7 +2343,7 @@ async function handleAddCol(){
     alert(result.error);
     return;
   }
-  showPaywall();
+  showPaywall(result.tier);
 }
 
 // COL1 SUBSCRIBE
