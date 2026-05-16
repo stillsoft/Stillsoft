@@ -1261,10 +1261,10 @@ window.addEventListener('message', async (event) => {
   if (data.type === 'thoftly-login' && data.email) {
     const email = String(data.email).trim().toLowerCase();
     if (!email.includes('@')) return;
-    // Always update the paid status from Ghost (source of truth for payments)
-    const isPaid = !!data.isPaid;
-    try { localStorage.setItem('thoftly_is_paid', isPaid ? '1' : '0'); } catch(e){}
-    window.thoftlyIsPaid = isPaid;
+    // Always update tier from Ghost (source of truth for payments)
+    const tier = ['basic', 'unlimited'].includes(data.tier) ? data.tier : 'free';
+    try { localStorage.setItem('thoftly_tier', tier); } catch(e){}
+    window.thoftlyTier = tier;
     // Check who's currently displayed
     const localEmail = (localStorage.getItem('thoftly_email')||'').trim().toLowerCase();
     const effectiveLocalEmail = (currentUserEmail || localEmail || '').trim().toLowerCase();
@@ -1308,10 +1308,10 @@ window.addEventListener('message', async (event) => {
     localStorage.setItem('thoftly_email', email);
     try {
       await loadSavedStartFromSupabase(email);
-      console.log('[thoftly] Loaded data for', email, '— paid:', isPaid);
+      console.log('[thoftly] Loaded data for', email, '— tier:', tier);
     } catch(e) {
       // No saved data yet for this user — keep the clean slate
-      console.log('[thoftly] Logged in as', email, '(no saved data yet) — paid:', isPaid);
+      console.log('[thoftly] Logged in as', email, '(no saved data yet) — tier:', tier);
     }
     refreshAuthUI();
   } else if (data.type === 'thoftly-logout') {
