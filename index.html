@@ -500,11 +500,16 @@ body{overflow-x:hidden;overflow-y:auto;}
 <div class="topbar">
   <div class="topbar-l">
     <span class="logo">thoftly</span>
+    <div class="top-sub">
+      <input id="topbar-email" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendTopbarMagicLink(this.value.trim())">
+      <button onclick="sendTopbarMagicLink(document.getElementById('topbar-email').value.trim())">subscribe free</button>
+    </div>
   </div>
   <div class="topbar-r">
     <a class="btn-ghost" href="https://thoftly.ghost.io/the-why/" target="_blank" style="text-decoration:none;">the why</a>
   </div>
 </div>
+<div class="sub-tagline-row"><span>free forever · save your starts</span></div>
 <div class="page">
 
 <!-- COL 1 — fixed left -->
@@ -816,10 +821,10 @@ body{overflow-x:hidden;overflow-y:auto;}
     <div id="paywall-unl-section">
     <div style="font-size:10px;color:var(--muted);margin-bottom:10px;font-weight:600;">unlimited starts</div>
     <div class="m-pricing" style="margin-bottom:12px;">
-      <div class="pc" onclick="selPlan('unlmo')">
+      <div class="pc" id="pc-unlmo" onclick="selPlan('unlmo')">
         <div class="pc-amt">$5</div><div class="pc-per">per month</div><div class="pc-note">unlimited lists</div>
       </div>
-      <div class="pc" onclick="selPlan('unlyr')">
+      <div class="pc" id="pc-unlyr" onclick="selPlan('unlyr')">
         <div class="pc-amt">$39</div><div class="pc-per">per year</div><div class="pc-note">unlimited · save $21</div>
       </div>
     </div>
@@ -983,6 +988,7 @@ function restoreGeneratedList(saved){
       if(item.done&&txt) txt.classList.add('done-t');
     });
   });
+  activeList={title:saved.title||'',topic:saved.prompt||saved.title||'',data:saved};
 }
 
 async function saveFirstListToSupabase(email,opts){
@@ -1525,7 +1531,7 @@ function renderBills(){
 document.addEventListener("DOMContentLoaded",()=>{renderBills();});
 // PLACES
 let places=[{name:'gmail',url:'https://gmail.com'},{name:'calendar',url:'https://calendar.google.com'},{name:'youtube',url:'https://youtube.com'},{name:'maps',url:'https://maps.google.com'},{name:'chatgpt',url:'https://chatgpt.com'},{name:'bank',url:'#'}];
-function renderPlaces(){const el=document.getElementById('pl-list');el.innerHTML='';places.forEach((p,i)=>{const d=document.createElement('div');d.className='pl-row';d.innerHTML=`<div class="pl-ico">${p.name[0].toLowerCase()}</div><a class="pl-nm" href="${p.url}" target="_blank">${p.name}</a><button class="pl-rm" title="remove" onclick="rmPlace(${i})">×</button>`;el.appendChild(d);});}
+function renderPlaces(){const el=document.getElementById('pl-list');el.innerHTML='';places.forEach((p,i)=>{const d=document.createElement('div');d.className='pl-row';const ico=document.createElement('div');ico.className='pl-ico';ico.textContent=(p.name[0]||'?').toLowerCase();const safeUrl=(p.url&&(p.url.startsWith('https://')||p.url.startsWith('http://')||p.url==='#'))?p.url:'#';const a=document.createElement('a');a.className='pl-nm';a.href=safeUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent=p.name;const btn=document.createElement('button');btn.className='pl-rm';btn.title='remove';btn.textContent='×';btn.onclick=()=>rmPlace(i);d.appendChild(ico);d.appendChild(a);d.appendChild(btn);el.appendChild(d);});}
 function rmPlace(i){places.splice(i,1);renderPlaces();}
 function addPlace(){const n=document.getElementById('pl-name').value.trim();let u=document.getElementById('pl-url').value.trim();if(!n)return;if(u&&!u.startsWith('http'))u='https://'+u;places.push({name:n,url:u||'#'});renderPlaces();document.getElementById('pl-name').value='';document.getElementById('pl-url').value='';}
 document.addEventListener("DOMContentLoaded",()=>{renderPlaces();});
@@ -2183,7 +2189,10 @@ function showPaywall(currentTier){
   document.getElementById('paywall').classList.add('open');
 }
 function closePaywall(){document.getElementById('paywall').classList.remove('open');}
-function selPlan(p){document.getElementById('pc-mo').classList.toggle('sel',p==='mo');document.getElementById('pc-yr').classList.toggle('sel',p==='yr');}
+function selPlan(p){
+  ['pc-mo','pc-yr','pc-unlmo','pc-unlyr'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('sel');});
+  const sel=document.getElementById('pc-'+p);if(sel)sel.classList.add('sel');
+}
 
 // TOGGLE "I WANT TO START SOMETHING"
 function toggleWantTo(row){
@@ -2285,7 +2294,7 @@ async function logoutUser(event){
   // Tell the parent Ghost site to also sign this user out
   try {
     if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'thoftly-logout-request' }, '*');
+      window.parent.postMessage({ type: 'thoftly-logout-request' }, 'https://www.thoftly.com');
     }
   } catch(e){}
   currentUserEmail='';
@@ -2851,15 +2860,30 @@ Return ONLY valid JSON, double quotes, no apostrophes:
 // ADD MORE STEPS to existing list
 function addSectionToList(btn){
   const body=btn.closest('.cl-body');
-  const secName=prompt('Section name (e.g. "next steps", "week 2"):');
-  if(!secName)return;
-  const newSec=document.createElement('div');
-  newSec.className='cl-sec';
-  newSec.innerHTML=`<div class="cl-sec-hdr"><div class="sec-ck" onclick="this.classList.toggle('done')"></div><div class="sec-nm">${secName}</div></div>
-    <div class="cl-items">
-      <div class="add-row"><input class="add-in" placeholder="+ add a step…" onkeydown="addStep(event,this)"><button class="add-btn" onclick="addStepBtn(this)">+</button></div>
-    </div>`;
-  body.insertBefore(newSec, btn);
+  if(body.querySelector('.add-sec-form'))return;
+  const form=document.createElement('div');form.className='add-sec-form';form.style.cssText='display:flex;gap:6px;margin:6px 0;';
+  const inp=document.createElement('input');inp.className='add-in';inp.placeholder='section name (e.g. "week 2")…';inp.style.flex='1';
+  const ok=document.createElement('button');ok.className='add-btn';ok.textContent='+';
+  const cancel=document.createElement('button');cancel.className='pl-rm';cancel.textContent='×';
+  const submit=()=>{
+    const secName=inp.value.trim();form.remove();if(!secName)return;
+    const newSec=document.createElement('div');newSec.className='cl-sec';
+    const hdr=document.createElement('div');hdr.className='cl-sec-hdr';
+    const ck=document.createElement('div');ck.className='sec-ck';ck.onclick=()=>ck.classList.toggle('done');
+    const nm=document.createElement('div');nm.className='sec-nm';nm.textContent=secName;
+    hdr.appendChild(ck);hdr.appendChild(nm);
+    const items=document.createElement('div');items.className='cl-items';
+    const addRow=document.createElement('div');addRow.className='add-row';
+    const addIn=document.createElement('input');addIn.className='add-in';addIn.placeholder='+ add a step…';addIn.onkeydown=(e)=>addStep(e,addIn);
+    const addBtn=document.createElement('button');addBtn.className='add-btn';addBtn.textContent='+';addBtn.onclick=()=>addStepBtn(addBtn);
+    addRow.appendChild(addIn);addRow.appendChild(addBtn);items.appendChild(addRow);
+    newSec.appendChild(hdr);newSec.appendChild(items);
+    body.insertBefore(newSec,btn);
+  };
+  ok.onclick=submit;cancel.onclick=()=>form.remove();
+  inp.onkeydown=(e)=>{if(e.key==='Enter'){e.preventDefault();submit();}if(e.key==='Escape')form.remove();};
+  form.appendChild(inp);form.appendChild(ok);form.appendChild(cancel);
+  body.insertBefore(form,btn);inp.focus();
 }
 
 // ASK MORE QUESTIONS FROM BOTTOM OF LIST in any column
@@ -3171,7 +3195,7 @@ function addCP(id){
   if(!n)return; if(u&&!u.startsWith('http'))u='https://'+u;
   const list=document.getElementById('pll-'+id);
   const row=document.createElement('div'); row.className='pl-row';
-  row.innerHTML=`<div class="pl-ico">${n[0]}</div><a class="pl-nm" href="${u||'#'}" target="_blank">${n}</a><button class="pl-rm" onclick="this.closest('.pl-row').remove()">×</button>`;
+  const ico2=document.createElement('div');ico2.className='pl-ico';ico2.textContent=(n[0]||'?').toLowerCase();const safeU=(u&&(u.startsWith('https://')||u.startsWith('http://')))?u:'#';const a2=document.createElement('a');a2.className='pl-nm';a2.href=safeU;a2.target='_blank';a2.rel='noopener noreferrer';a2.textContent=n;const rm2=document.createElement('button');rm2.className='pl-rm';rm2.textContent='×';rm2.onclick=()=>row.remove();row.appendChild(ico2);row.appendChild(a2);row.appendChild(rm2);
   list.appendChild(row);
   document.getElementById('pln-'+id).value=''; document.getElementById('plu-'+id).value='';
 }
@@ -3229,7 +3253,7 @@ function applyStoredData(data,opts){
   if(data.wxTemp){const el=document.getElementById('wx-temp');if(el)el.textContent=data.wxTemp;}
   if(data.wxDesc){const el=document.getElementById('wx-desc');if(el)el.textContent=data.wxDesc;}
   if(data.wxIcon){const el=document.getElementById('wx-icon');if(el)el.textContent=data.wxIcon;}
-  if(data.wxForecast){const el=document.getElementById('wx-fc');if(el)el.innerHTML=data.wxForecast;}
+  // wxForecast intentionally not restored — always fetch fresh weather on load
   const wd=data.widgetData;
   if(wd){
     if(wd.billDraft){
@@ -3242,7 +3266,7 @@ function applyStoredData(data,opts){
       const pu=document.getElementById('pl-url');if(pu)pu.value=wd.placeDraft.url||'';
     }
     if(wd.weather&&wd.weather.searchInput!==undefined){
-      const wi=document.getElementById('wx-loc-in');if(wi)wi.value=wd.weather.searchInput||'';
+      const wi=document.getElementById('wx-loc-in');if(wi){wi.value=wd.weather.searchInput||'';if(wi.value)searchWxLocation();}
     }
     if(wd.customWidgets){
       wd.customWidgets.forEach(widget=>{
