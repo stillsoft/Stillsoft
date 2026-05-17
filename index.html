@@ -1198,9 +1198,7 @@ async function canAddList(){
     const userRes=await db.from('users').select('tier').eq('email',email).maybeSingle();
     if(!userRes.error && userRes.data && userRes.data.tier) tier = userRes.data.tier;
   }
-  const countRes=await db.from('saved_lists').select('id',{count:'exact',head:true}).eq('user_email',email);
-  if(countRes.error) return {allowed:false, error:countRes.error.message};
-  const count=countRes.count || 0;
+  const count = document.querySelectorAll('.workspace-col').length;
   const limit = tier === 'unlimited' ? Infinity : tier === 'basic' ? 2 : 1;
   return {allowed:count < limit, tier:tier, count:count};
 }
