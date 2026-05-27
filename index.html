@@ -36,6 +36,11 @@ body{overflow-x:hidden;overflow-y:auto;}
   min-height:calc(var(--vh, 1vh) * 100 - 49px);
   align-items:flex-start;
 }
+/* When embedded as an iframe, remove vh-based min-heights so the
+   height reporter doesn't create an infinite resize feedback loop. */
+body.embedded{min-height:0;}
+body.embedded .page{min-height:300px;}
+body.embedded .workspace-track{min-height:300px;}
 
 /* fixed left */
 #col1{
@@ -823,6 +828,9 @@ body{overflow-x:hidden;overflow-y:auto;}
 <script defer src="https://unpkg.com/@tryghost/portal@latest/umd/portal.min.js" data-ghost="https://thoftly.ghost.io"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// Mark body as embedded immediately so CSS overrides apply before first paint
+if (window.parent !== window) document.body.classList.add('embedded');
+
 const SUPABASE_URL = 'https://vnsqorbrcxiesewbhzsb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuc3FvcmJyY3hpZXNld2JoenNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzM3NzAsImV4cCI6MjA5MzQwOTc3MH0.0APBc__Fi3wt4HSj2EbDtrEjmOvCSSiK7Z04c9J9kh4';
 let supabaseClient = null;
@@ -3340,52 +3348,47 @@ window.addEventListener('beforeunload', function(e){
 </script>
 
 <!-- Iframe height reporter — posts content height to parent (Ghost) so the
-     iframe can grow to fit and the user gets one continuous page scroll. -->
+     iframe can grow to fit and the user gets one continuous page scroll.
+     body.embedded (set above) removes vh-based min-heights so scrollHeight
+     is stable and this reporter cannot create an infinite resize loop. -->
 <script>
 (function(){
-  if (window.parent === window) return; // not embedded; do nothing
+  if (window.parent === window) return;
 
   var lastHeight = 0;
-  var pendingFrame = null;
+  var timer = null;
 
   function measureAndReport(){
-    pendingFrame = null;
+    timer = null;
     var h = Math.max(
       document.documentElement.scrollHeight,
       document.body ? document.body.scrollHeight : 0
     );
-    if (Math.abs(h - lastHeight) < 4) return; // ignore tiny jitter
+    if (Math.abs(h - lastHeight) < 8) return;
     lastHeight = h;
     try { window.parent.postMessage({ type: 'thoftly-height', height: h }, '*'); } catch(e) {}
   }
 
   function schedule(){
-    if (pendingFrame) return;
-    pendingFrame = requestAnimationFrame(measureAndReport);
+    clearTimeout(timer);
+    timer = setTimeout(measureAndReport, 150);
   }
 
-  // Initial reports — catch late-rendering content (fonts, images, async data)
+  // Fire on load and shortly after (fonts/images/async widgets)
   document.addEventListener('DOMContentLoaded', schedule);
   window.addEventListener('load', function(){
     schedule();
-    setTimeout(schedule, 250);
-    setTimeout(schedule, 1000);
-    setTimeout(schedule, 2500);
+    setTimeout(schedule, 600);
+    setTimeout(schedule, 1800);
+    setTimeout(schedule, 3500);
   });
-  window.addEventListener('resize', schedule);
 
-  // Watch content changes (cards added, widgets resized, etc.)
-  if (window.ResizeObserver) {
-    var ro = new ResizeObserver(schedule);
-    if (document.body) ro.observe(document.body);
-    else document.addEventListener('DOMContentLoaded', function(){ ro.observe(document.body); });
-  }
-
-  // Also watch DOM mutations as a fallback (cheap subtree observer)
+  // Watch only the workspace track for new columns being added/removed —
+  // not the whole body, which would re-fire as the iframe itself resizes.
   if (window.MutationObserver) {
-    var mo = new MutationObserver(schedule);
     document.addEventListener('DOMContentLoaded', function(){
-      mo.observe(document.body, { childList: true, subtree: true });
+      var track = document.getElementById('workspace-track');
+      if (track) new MutationObserver(schedule).observe(track, { childList: true });
     });
   }
 })();
