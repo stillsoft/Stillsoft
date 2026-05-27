@@ -41,6 +41,9 @@ body{overflow-x:hidden;overflow-y:auto;}
 body.embedded{min-height:0;}
 body.embedded .page{min-height:300px;}
 body.embedded .workspace-track{min-height:300px;}
+/* In embedded mode overlays use absolute positioning so JS can place them
+   at the visible portion of the screen (fixed is relative to iframe top). */
+body.embedded .overlay{position:absolute;inset:auto;left:0;right:0;}
 
 /* fixed left */
 #col1{
@@ -831,6 +834,15 @@ body.embedded .workspace-track{min-height:300px;}
 // Mark body as embedded immediately so CSS overrides apply before first paint
 if (window.parent !== window) document.body.classList.add('embedded');
 
+// Tracks the parent Ghost page's scroll so modals can be centred on screen
+var _vpScrollY = 0, _vpIframeTop = 0, _vpHeight = window.innerHeight;
+function positionOverlay(el){
+  if(!document.body.classList.contains('embedded')) return;
+  var top = Math.max(0, _vpScrollY - _vpIframeTop);
+  el.style.top = top + 'px';
+  el.style.height = _vpHeight + 'px';
+}
+
 const SUPABASE_URL = 'https://vnsqorbrcxiesewbhzsb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuc3FvcmJyY3hpZXNld2JoenNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzM3NzAsImV4cCI6MjA5MzQwOTc3MH0.0APBc__Fi3wt4HSj2EbDtrEjmOvCSSiK7Z04c9J9kh4';
 let supabaseClient = null;
@@ -1329,6 +1341,10 @@ window.addEventListener('message', async (event) => {
       doLocalLogout();
       refreshAuthUI();
     }
+  } else if (data.type === 'thoftly-viewport') {
+    _vpScrollY  = data.scrollY       || 0;
+    _vpIframeTop= data.iframeOffsetTop|| 0;
+    _vpHeight   = data.viewportHeight || window.innerHeight;
   }
 });
 
@@ -1645,7 +1661,7 @@ function startBegin(val){
   genKnow(val);
 }
 
-function showReplaceList(){document.getElementById('replace-list-modal').classList.add('open');}
+function showReplaceList(){const el=document.getElementById('replace-list-modal');positionOverlay(el);el.classList.add('open');}
 function closeReplaceList(){document.getElementById('replace-list-modal').classList.remove('open');pendingBeginValue='';}
 function confirmReplaceList(){
   const val=pendingBeginValue||document.getElementById('begin-in').value.trim();
@@ -2186,7 +2202,7 @@ function initMobile(){ }
 window.addEventListener('load', initMobile);
 
 // PAYWALL
-function showPaywall(){document.getElementById('paywall').classList.add('open');}
+function showPaywall(){const el=document.getElementById('paywall');positionOverlay(el);el.classList.add('open');}
 function closePaywall(){document.getElementById('paywall').classList.remove('open');}
 function selPlan(p){document.getElementById('pc-mo').classList.toggle('sel',p==='mo');document.getElementById('pc-yr').classList.toggle('sel',p==='yr');}
 
@@ -2486,7 +2502,7 @@ function showHomepageHelp(){
   }
 
   body.innerHTML = html;
-  document.getElementById('homepage-modal').classList.add('open');
+  const _hpEl=document.getElementById('homepage-modal');positionOverlay(_hpEl);_hpEl.classList.add('open');
 }
 function closeHomepageHelp(){ document.getElementById('homepage-modal').classList.remove('open'); }
 
@@ -2525,7 +2541,7 @@ function openLogin(e){
       if(btn) btn.textContent='subscribe free — send magic link →';
     }
   }
-  document.getElementById('login-modal').classList.add('open');
+  const _lmEl=document.getElementById('login-modal');positionOverlay(_lmEl);_lmEl.classList.add('open');
   setTimeout(()=>{
     const el=document.getElementById('login-email');
     if(el&&emailArea&&emailArea.style.display!=='none') el.focus();
@@ -2748,7 +2764,7 @@ Return ONLY valid JSON, double quotes, no apostrophes:
 }
 
 // CLARIFY
-function showClarify(){ document.getElementById('clarify-modal').classList.add('open'); }
+function showClarify(){const el=document.getElementById('clarify-modal');positionOverlay(el);el.classList.add('open');}
 function closeClarify(){ document.getElementById('clarify-modal').classList.remove('open'); }
 function submitClarify(){
   const type=document.getElementById('cl-type').value.trim();
@@ -3069,7 +3085,7 @@ document.addEventListener('touchend', () => {
 document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll('.card[draggable]').forEach(initTouchDrag);});
 
 // ADD WIDGET
-function addWidget(){ document.getElementById('widget-picker').classList.add('open'); }
+function addWidget(){const el=document.getElementById('widget-picker');positionOverlay(el);el.classList.add('open');}
 function closeWidgetPicker(){ document.getElementById('widget-picker').classList.remove('open'); }
 
 let widgetCount = 0;
