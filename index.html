@@ -852,6 +852,7 @@ function getSupabase(){
 function collectWidgetData(){
   const customWidgets=Array.from(document.querySelectorAll('#col3 .card[id^="w-custom-"]')).map(card=>({
     id:card.id,
+    type:card.dataset.widgetType||'notes',
     label:card.querySelector('.card-lbl')?card.querySelector('.card-lbl').textContent:'',
     minimized:card.classList.contains('min'),
     fields:Array.from(card.querySelectorAll('input,textarea,[contenteditable="true"]')).map(el=>({
@@ -3072,16 +3073,18 @@ function addWidget(){ document.getElementById('widget-picker').classList.add('op
 function closeWidgetPicker(){ document.getElementById('widget-picker').classList.remove('open'); }
 
 let widgetCount = 0;
-function addWidgetType(type){
-  closeWidgetPicker();
-  widgetCount++;
-  const id = 'w-custom-' + widgetCount;
+function addWidgetType(type, existingId){
+  if(!existingId) closeWidgetPicker();
+  if(!existingId) widgetCount++;
+  const id = existingId || ('w-custom-' + widgetCount);
+  if(existingId){const n=parseInt(existingId.replace('w-custom-',''),10);if(!isNaN(n)&&n>=widgetCount)widgetCount=n+1;}
   const col3 = document.getElementById('col3');
   const addBtn = col3.querySelector('.btn-add-widget');
   const card = document.createElement('div');
   card.className = 'card';
   card.id = id;
   card.draggable = true;
+  card.dataset.widgetType = type;
   card.ondragstart = dragStart;
   card.ondragover = dragOver;
   card.ondrop = dragDrop;
@@ -3250,6 +3253,9 @@ function applyStoredData(data,opts){
     }
     if(wd.customWidgets){
       wd.customWidgets.forEach(widget=>{
+        if(!document.getElementById(widget.id)&&widget.type){
+          addWidgetType(widget.type,widget.id);
+        }
         const card=document.getElementById(widget.id);
         if(!card) return;
         card.classList.toggle('min',!!widget.minimized);
@@ -3260,6 +3266,7 @@ function applyStoredData(data,opts){
           if(el.value!==undefined) el.value=field.value||'';
           else el.textContent=field.value||'';
         });
+        if(widget.type==='countdown') updateCD(widget.id);
       });
     }
   }
