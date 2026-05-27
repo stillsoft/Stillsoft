@@ -3338,5 +3338,57 @@ window.addEventListener('beforeunload', function(e){
   }
 });
 </script>
+
+<!-- Iframe height reporter — posts content height to parent (Ghost) so the
+     iframe can grow to fit and the user gets one continuous page scroll. -->
+<script>
+(function(){
+  if (window.parent === window) return; // not embedded; do nothing
+
+  var lastHeight = 0;
+  var pendingFrame = null;
+
+  function measureAndReport(){
+    pendingFrame = null;
+    var h = Math.max(
+      document.documentElement.scrollHeight,
+      document.body ? document.body.scrollHeight : 0
+    );
+    if (Math.abs(h - lastHeight) < 4) return; // ignore tiny jitter
+    lastHeight = h;
+    try { window.parent.postMessage({ type: 'thoftly-height', height: h }, '*'); } catch(e) {}
+  }
+
+  function schedule(){
+    if (pendingFrame) return;
+    pendingFrame = requestAnimationFrame(measureAndReport);
+  }
+
+  // Initial reports — catch late-rendering content (fonts, images, async data)
+  document.addEventListener('DOMContentLoaded', schedule);
+  window.addEventListener('load', function(){
+    schedule();
+    setTimeout(schedule, 250);
+    setTimeout(schedule, 1000);
+    setTimeout(schedule, 2500);
+  });
+  window.addEventListener('resize', schedule);
+
+  // Watch content changes (cards added, widgets resized, etc.)
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(schedule);
+    if (document.body) ro.observe(document.body);
+    else document.addEventListener('DOMContentLoaded', function(){ ro.observe(document.body); });
+  }
+
+  // Also watch DOM mutations as a fallback (cheap subtree observer)
+  if (window.MutationObserver) {
+    var mo = new MutationObserver(schedule);
+    document.addEventListener('DOMContentLoaded', function(){
+      mo.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+})();
+</script>
 </body>
 </html>
